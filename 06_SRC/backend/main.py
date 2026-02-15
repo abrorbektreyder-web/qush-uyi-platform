@@ -246,7 +246,7 @@ async def create_bird(bird: CreateBirdRequest):
     return {"status": "success", "bird": new_bird}
 
 @app.get("/birds")
-async def get_birds(category: str = None, breed: str = None, is_verified: bool = None):
+async def get_birds(category: str = None, breed: str = None, is_verified: bool = None, q: str = None):
     # Filter logic
     filtered_birds = []
     
@@ -255,15 +255,22 @@ async def get_birds(category: str = None, breed: str = None, is_verified: bool =
         if bird.get("status") != "active":
             continue
             
-        # 2. Filter by Category
+        # 2. Search Query (q)
+        if q:
+            # Search in Category or Breed (Case insensitive)
+            query = q.lower()
+            if query not in bird["category"].lower() and query not in bird["breed"].lower():
+                continue
+
+        # 3. Filter by Category
         if category and category != "Hammasi" and bird["category"].lower() != category.lower():
             continue
             
-        # 3. Filter by Breed
+        # 4. Filter by Breed
         if breed and breed.lower() not in bird["breed"].lower():
             continue
             
-        # 4. Filter by Verification
+        # 5. Filter by Verification
         if is_verified is not None and bird.get("is_verified") != is_verified:
             continue
             

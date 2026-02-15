@@ -21,7 +21,7 @@ STATUS: [ ] Kutilmoqda | [x] Bajarildi | [~] Jarayonda
 
 ### 🟢 4. MARKETPLACE (VITRINA)
 [x] 4.1. Asosiy lenta (Feed) API va UI.
-[ ] 4.2. Qidiruv va Filterlash (Backend/Frontend).
+[x] 4.2. Qidiruv va Filterlash (Backend/Frontend).
 [ ] 4.3. "Tasdiqlanganlar" alohida bo'limi.
 
 ### 🟡 5. PAYMENT & SOFT-ESCROW (MOLIYA)

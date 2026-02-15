@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async'; // For Debounce
 
 void main() {
   runApp(const QushUyiApp());
@@ -225,12 +226,50 @@ class HomeFeed extends StatefulWidget {
 
     // Mock Data State
     List<Map<String, dynamic>> _birds = [];
+    List<Map<String, dynamic>> _filteredBirds = [];
     bool _isLoading = true;
+    Timer? _debounce;
 
     @override
     void initState() {
         super.initState();
         _fetchBirds();
+    }
+    
+    @override
+    void dispose() {
+        _debounce?.cancel();
+        _breedController.dispose();
+        super.dispose();
+    }
+
+    void _onSearchChanged(String query) {
+        if (_debounce?.isActive ?? false) _debounce!.cancel();
+        _debounce = Timer(const Duration(milliseconds: 500), () {
+             _filterBirds();
+        });
+    }
+    
+    void _filterBirds() {
+        setState(() {
+             _filteredBirds = _birds.where((bird) {
+                // 1. Category Filter
+                if (_selectedCategory != "Hammasi" && bird["category"] != _selectedCategory) return false;
+                
+                // 2. Verified Filter
+                if (_onlyVerified && bird["is_verified"] != true) return false;
+                
+                // 3. Search Query (Breed or Category)
+                String query = _breedController.text.toLowerCase();
+                if (query.isNotEmpty) {
+                    bool matchesBreed = bird["breed"].toString().toLowerCase().contains(query);
+                    bool matchesCategory = bird["category"].toString().toLowerCase().contains(query);
+                    if (!matchesBreed && !matchesCategory) return false;
+                }
+                
+                return true;
+             }).toList();
+        });
     }
 
     // Simulate API Call
@@ -286,20 +325,13 @@ class HomeFeed extends StatefulWidget {
             setState(() {
                 _birds = mockResponse;
                 _isLoading = false;
+                _filterBirds(); // Initial Filter
             });
         }
     }
 
   @override
   Widget build(BuildContext context) {
-    // Client-side filtering for demo (in real app, pass params to _fetchBirds)
-    List<Map<String, dynamic>> displayBirds = _birds.where((bird) {
-        if (_selectedCategory != "Hammasi" && bird["category"] != _selectedCategory) return false;
-        if (_onlyVerified && bird["is_verified"] != true) return false;
-        if (_breedController.text.isNotEmpty && !bird["breed"].toString().toLowerCase().contains(_breedController.text.toLowerCase())) return false;
-        return true;
-    }).toList();
-
     return Column(
         children: [
             // Search & Filter Header
@@ -320,6 +352,7 @@ class HomeFeed extends StatefulWidget {
                                             onSelected: (selected) {
                                                 setState(() {
                                                     _selectedCategory = category;
+                                                    _filterBirds();
                                                 });
                                             },
                                         ),
@@ -333,9 +366,9 @@ class HomeFeed extends StatefulWidget {
                                 Expanded(
                                     child: TextField(
                                         controller: _breedController,
-                                        onChanged: (v) => setState((){}), // Trigger rebuild on search
+                                        onChanged: _onSearchChanged, // Debounced Search
                                         decoration: const InputDecoration(
-                                            labelText: "Qush parodasi",
+                                            labelText: "Qidiruv (Nomi, Parodasi)",
                                             prefixIcon: Icon(Icons.search),
                                             border: OutlineInputBorder(),
                                             contentPadding: EdgeInsets.symmetric(horizontal: 16),
@@ -350,6 +383,7 @@ class HomeFeed extends StatefulWidget {
                                     onSelected: (bool value) {
                                         setState(() {
                                             _onlyVerified = value;
+                                            _filterBirds();
                                         });
                                     },
                                     avatar: const Icon(Icons.verified, color: Colors.white, size: 16),
@@ -366,7 +400,7 @@ class HomeFeed extends StatefulWidget {
             Expanded(
                 child: _isLoading 
                 ? const Center(child: CircularProgressIndicator()) 
-                : displayBirds.isEmpty 
+                : _filteredBirds.isEmpty 
                     ? const Center(child: Text("Qushlar topilmadi"))
                     : GridView.builder(
                   padding: const EdgeInsets.all(16),
@@ -378,7 +412,7 @@ class HomeFeed extends StatefulWidget {
                   ),
                   itemCount: displayBirds.length, 
                   itemBuilder: (context, index) {
-                    final bird = displayBirds[index];
+                    final bird = _filteredBirds[index];
                     
                     return GestureDetector(
                       onTap: () {
