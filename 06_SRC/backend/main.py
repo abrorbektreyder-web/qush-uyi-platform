@@ -247,6 +247,62 @@ async def approve_bird(bird_id: str):
             return {"status": "success", "message": f"Bird {bird_id} verified"}
     raise HTTPException(status_code=404, detail="Bird not found")
 
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
+
+# Setup Uploads Directory for QR Codes
+QR_UPLOAD_DIR = "uploads/qrcodes"
+os.makedirs(QR_UPLOAD_DIR, exist_ok=True)
+
+# ...
+
+@app.post("/birds/{bird_id}/generate-passport")
+async def generate_passport(bird_id: str):
+    # Find Bird
+    bird = next((b for b in BIRDS if b["id"] == bird_id), None)
+    if not bird:
+        raise HTTPException(status_code=404, detail="Bird not found")
+        
+    qr_filename = f"qr_{bird_id}.png"
+    qr_path = os.path.join(QR_UPLOAD_DIR, qr_filename)
+    
+    # Generate QR Code
+    if qrcode:
+        # Data to encode (e.g., link to bird detail)
+        qr_data = f"https://qushuyi.uz/birds/{bird_id}"
+        img = qrcode.make(qr_data)
+        img.save(qr_path)
+    else:
+        # Mock QR creation if library not installed
+        with open(qr_path, "wb") as f:
+            f.write(b"Mock QR Code Content") 
+            
+    # Update Bird with QR Path
+    bird["passport_qr"] = f"/uploads/qrcodes/{qr_filename}"
+    
+    return {"status": "success", "qr_url": bird["passport_qr"]}
+
+@app.get("/birds/{bird_id}/passport")
+async def get_bird_passport(bird_id: str):
+    bird = next((b for b in BIRDS if b["id"] == bird_id), None)
+    if not bird:
+        raise HTTPException(status_code=404, detail="Bird not found")
+        
+    # Auto-generate if missing
+    if "passport_qr" not in bird:
+        await generate_passport(bird_id)
+        
+    return {
+        "bird_name": f"{bird['category']} - {bird['breed']}",
+        "is_verified": bird.get("is_verified", False),
+        "qr_code": bird.get("passport_qr"),
+        "owner_id": bird["user_id"],
+        "region_id": bird["region_id"],
+        "issued_at": "2026-02-15" # Mock date
+    }
+
 @app.get("/")
 async def root():
     return {"message": "Qush Uyi API is running"}

@@ -17,7 +17,7 @@ STATUS: [ ] Kutilmoqda | [x] Bajarildi | [~] Jarayonda
 ### 🟢 3. BIRD HISTORY & VERIFICATION (ISHONCH)
 [x] 3.1. Hujjat yuklash va Admin panelga yuborish.
 [x] 3.2. "Verified Badge" (Galochka) logikasi.
-[ ] 3.3. Qush pasporti (QR Code) generatsiyasi.
+[x] 3.3. Qush pasporti (QR Code) generatsiyasi.
 
 ### 🟢 4. MARKETPLACE (VITRINA)
 [ ] 4.1. Asosiy lenta (Feed) API va UI.

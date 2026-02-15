@@ -308,72 +308,80 @@ class _HomeFeedState extends State<HomeFeed> {
                     
                     if (_onlyVerified && !isMockVerified) return const SizedBox.shrink(); // Simple Client Side Filter Mock
 
-                    return Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    return GestureDetector(
+                      onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => BirdDetailPage(index: index, isVerified: isMockVerified)),
+                          );
+                      },
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                ),
+                                child: Stack(
+                                  children: [
+                                      Center(child: Icon(Icons.image, size: 50, color: Colors.grey[400])),
+                                      Positioned(
+                                          top: 8, right: 8,
+                                          child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                  color: Colors.black54,
+                                                  borderRadius: BorderRadius.circular(8)
+                                              ),
+                                              child: const Text("Toshkent", style: TextStyle(color: Colors.white, fontSize: 10)),
+                                          ),
+                                      )
+                                  ],
+                                ),
                               ),
-                              child: Stack(
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                    Center(child: Icon(Icons.image, size: 50, color: Colors.grey[400])),
-                                    Positioned(
-                                        top: 8, right: 8,
-                                        child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                                color: Colors.black54,
-                                                borderRadius: BorderRadius.circular(8)
-                                            ),
-                                            child: const Text("Toshkent", style: TextStyle(color: Colors.white, fontSize: 10)),
-                                        ),
-                                    )
+                                  Row(
+                                      children: [
+                                          Text(
+                                            "Sayroqi Kanareyka #${index + 1}",
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                          ),
+                                          if (isMockVerified) 
+                                              const Padding(
+                                                  padding: EdgeInsets.only(left: 4),
+                                                  child: Icon(Icons.verified, color: Colors.blue, size: 16),
+                                              )
+                                      ],
+                                  ),
+                                  const Text("Zoti: Chinniso", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    "500 000 UZS",
+                                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton(
+                                          onPressed: widget.triggerAuth,
+                                          child: const Text("Sotib Olish"),
+                                      ),
+                                  )
                                 ],
                               ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                    children: [
-                                        Text(
-                                          "Sayroqi Kanareyka #${index + 1}",
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                        ),
-                                        if (isMockVerified) 
-                                            const Padding(
-                                                padding: EdgeInsets.only(left: 4),
-                                                child: Icon(Icons.verified, color: Colors.blue, size: 16),
-                                            )
-                                    ],
-                                ),
-                                const Text("Zoti: Chinniso", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  "500 000 UZS",
-                                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton(
-                                        onPressed: widget.triggerAuth,
-                                        child: const Text("Sotib Olish"),
-                                    ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -382,6 +390,153 @@ class _HomeFeedState extends State<HomeFeed> {
         ],
     );
   }
+}
+
+class BirdDetailPage extends StatelessWidget {
+    final int index;
+    final bool isVerified;
+    
+    const BirdDetailPage({super.key, required this.index, required this.isVerified});
+
+    @override
+    Widget build(BuildContext context) {
+        return Scaffold(
+            appBar: AppBar(title: Text("Sayroqi Kanareyka #${index + 1}")),
+            body: SingleChildScrollView(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                        Container(
+                            height: 250,
+                            color: Colors.grey[300],
+                            child: const Center(child: Icon(Icons.image, size: 100, color: Colors.grey)),
+                        ),
+                        Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                            Text("500 000 UZS", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green[700])),
+                                            if (isVerified)
+                                                Chip(
+                                                    avatar: const Icon(Icons.verified, color: Colors.white, size: 16),
+                                                    label: const Text("Tasdiqlangan", style: TextStyle(color: Colors.white)),
+                                                    backgroundColor: Colors.blue,
+                                                )
+                                        ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text("Ma'lumotlar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 8),
+                                    _buildInfoRow("Kategoriya", "Kanareyka"),
+                                    _buildInfoRow("Paroda (Zoti)", "Chinniso"),
+                                    _buildInfoRow("Yosh", "6 oy"),
+                                    _buildInfoRow("Hudud", "Toshkent shahri"),
+                                    
+                                    const SizedBox(height: 24),
+                                    const Text("Ta'rif", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                        "Juda chiroyli sayraydigan kanareyka. Zoti toza. Emlangan. Odamga tez o'rganadi. Qafas bilan birga beriladi.",
+                                        style: TextStyle(color: Colors.black87, height: 1.5),
+                                    ),
+                                    
+                                    const SizedBox(height: 32),
+                                    if (isVerified)
+                                        SizedBox(
+                                            width: double.infinity,
+                                            height: 50,
+                                            child: ElevatedButton.icon(
+                                                onPressed: () {
+                                                    showModalBottomSheet(
+                                                        context: context, 
+                                                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                                                        builder: (context) => const PassportModal()
+                                                    );
+                                                },
+                                                icon: const Icon(Icons.qr_code),
+                                                label: const Text("RAQAMLI PASPORTNI KO'RISH"),
+                                                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                                            ),
+                                        ),
+                                        
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                        width: double.infinity,
+                                        height: 50,
+                                        child: ElevatedButton(
+                                            onPressed: () {},
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                            child: const Text("SOTUVCHI BILAN BOG'LANISH"),
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+        );
+    }
+    
+    Widget _buildInfoRow(String label, String value) {
+        return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                    Text(label, style: const TextStyle(color: Colors.grey)),
+                    Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+                ],
+            ),
+        );
+    }
+}
+
+class PassportModal extends StatelessWidget {
+    const PassportModal({super.key});
+
+    @override
+    Widget build(BuildContext context) {
+        return Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                     const Text("QUSH PASPORTI", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                     const SizedBox(height: 4),
+                     Text("ID: BIRDS-773823", style: TextStyle(color: Colors.grey[600])),
+                     const SizedBox(height: 24),
+                     Container(
+                         width: 200,
+                         height: 200,
+                         decoration: BoxDecoration(
+                             border: Border.all(color: Colors.black12),
+                             borderRadius: BorderRadius.circular(16)
+                         ),
+                         child: const Center(
+                             child: Icon(Icons.qr_code_2, size: 150, color: Colors.black), // Mock QR
+                         ),
+                     ),
+                     const SizedBox(height: 24),
+                     const Row(
+                         mainAxisAlignment: MainAxisAlignment.center,
+                         children: [
+                             Icon(Icons.verified, color: Colors.blue),
+                             SizedBox(width: 8),
+                             Text("RASMIY TASDIQLANGAN", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16))
+                         ],
+                     ),
+                     const SizedBox(height: 8),
+                     const Text("Ushbu qush Qush Uyi platformasi tomonidan tekshirilgan va ma'lumotlari to'g'ri deb topilgan.", textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.grey)),
+                     const SizedBox(height: 24),
+                ],
+            ),
+        );
+    }
 }
 
 class AddListingPage extends StatefulWidget {
