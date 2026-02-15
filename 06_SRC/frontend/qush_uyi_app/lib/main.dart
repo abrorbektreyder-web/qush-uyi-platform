@@ -223,14 +223,83 @@ class HomeFeed extends StatefulWidget {
   State<HomeFeed> createState() => _HomeFeedState();
 }
 
-class _HomeFeedState extends State<HomeFeed> {
-    final List<String> _categories = ["Hammasi", "Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq"];
-    String _selectedCategory = "Hammasi";
-    final TextEditingController _breedController = TextEditingController();
-    bool _onlyVerified = false; // Verified Filter Toggle
+    // Mock Data State
+    List<Map<String, dynamic>> _birds = [];
+    bool _isLoading = true;
+
+    @override
+    void initState() {
+        super.initState();
+        _fetchBirds();
+    }
+
+    // Simulate API Call
+    Future<void> _fetchBirds() async {
+        setState(() => _isLoading = true);
+        await Future.delayed(const Duration(milliseconds: 800)); // Network delay
+
+        // Mock Response (matching Backend structure)
+        List<Map<String, dynamic>> mockResponse = [
+            {
+                "id": "bird_1",
+                "category": "Kanareyka",
+                "breed": "Sayroqi",
+                "price": 500000,
+                "region_name": "Toshkent shahri",
+                "seller_name": "Ali V.",
+                "is_verified": true,
+                "image": null // Placeholder
+            },
+            {
+                "id": "bird_2",
+                "category": "Kabutar",
+                "breed": "Oqbosh",
+                "price": 250000,
+                "region_name": "Samarqand",
+                "seller_name": "Vali B.",
+                "is_verified": false,
+                "image": null
+            },
+             {
+                "id": "bird_3",
+                "category": "To'ti",
+                "breed": "Korella",
+                "price": 350000,
+                "region_name": "Buxoro",
+                "seller_name": "G'ani",
+                "is_verified": true,
+                "image": null
+            },
+             {
+                "id": "bird_4",
+                "category": "Tovuq",
+                "breed": "Brama",
+                "price": 1200000,
+                "region_name": "Farg'ona",
+                "seller_name": "Hoshim",
+                "is_verified": false,
+                "image": null
+            }
+        ];
+
+        if (mounted) {
+            setState(() {
+                _birds = mockResponse;
+                _isLoading = false;
+            });
+        }
+    }
 
   @override
   Widget build(BuildContext context) {
+    // Client-side filtering for demo (in real app, pass params to _fetchBirds)
+    List<Map<String, dynamic>> displayBirds = _birds.where((bird) {
+        if (_selectedCategory != "Hammasi" && bird["category"] != _selectedCategory) return false;
+        if (_onlyVerified && bird["is_verified"] != true) return false;
+        if (_breedController.text.isNotEmpty && !bird["breed"].toString().toLowerCase().contains(_breedController.text.toLowerCase())) return false;
+        return true;
+    }).toList();
+
     return Column(
         children: [
             // Search & Filter Header
@@ -264,6 +333,7 @@ class _HomeFeedState extends State<HomeFeed> {
                                 Expanded(
                                     child: TextField(
                                         controller: _breedController,
+                                        onChanged: (v) => setState((){}), // Trigger rebuild on search
                                         decoration: const InputDecoration(
                                             labelText: "Qush parodasi",
                                             prefixIcon: Icon(Icons.search),
@@ -294,7 +364,11 @@ class _HomeFeedState extends State<HomeFeed> {
             ),
             
             Expanded(
-                child: GridView.builder(
+                child: _isLoading 
+                ? const Center(child: CircularProgressIndicator()) 
+                : displayBirds.isEmpty 
+                    ? const Center(child: Text("Qushlar topilmadi"))
+                    : GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: widget.gridCount == 1 ? 1 : 4,
@@ -302,17 +376,15 @@ class _HomeFeedState extends State<HomeFeed> {
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                   ),
-                  itemCount: 8, // Mock count
+                  itemCount: displayBirds.length, 
                   itemBuilder: (context, index) {
-                    bool isMockVerified = index % 3 == 0; // Mock Verification logic
+                    final bird = displayBirds[index];
                     
-                    if (_onlyVerified && !isMockVerified) return const SizedBox.shrink(); // Simple Client Side Filter Mock
-
                     return GestureDetector(
                       onTap: () {
                           Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => BirdDetailPage(index: index, isVerified: isMockVerified)),
+                              MaterialPageRoute(builder: (context) => BirdDetailPage(index: index, isVerified: bird["is_verified"])),
                           );
                       },
                       child: Card(
@@ -338,7 +410,18 @@ class _HomeFeedState extends State<HomeFeed> {
                                                   color: Colors.black54,
                                                   borderRadius: BorderRadius.circular(8)
                                               ),
-                                              child: const Text("Toshkent", style: TextStyle(color: Colors.white, fontSize: 10)),
+                                              child: Text(bird["region_name"] ?? "Noma'lum", style: const TextStyle(color: Colors.white, fontSize: 10)),
+                                          ),
+                                      ),
+                                       Positioned(
+                                          bottom: 8, left: 8,
+                                          child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.8),
+                                                  borderRadius: BorderRadius.circular(8)
+                                              ),
+                                              child: Text(bird["seller_name"] ?? "Sotuvchi", style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold)),
                                           ),
                                       )
                                   ],
@@ -352,22 +435,25 @@ class _HomeFeedState extends State<HomeFeed> {
                                 children: [
                                   Row(
                                       children: [
-                                          Text(
-                                            "Sayroqi Kanareyka #${index + 1}",
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                          Expanded(
+                                              child: Text(
+                                                "${bird['category']} - ${bird['breed']}",
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                           ),
-                                          if (isMockVerified) 
+                                          if (bird["is_verified"]) 
                                               const Padding(
                                                   padding: EdgeInsets.only(left: 4),
                                                   child: Icon(Icons.verified, color: Colors.blue, size: 16),
                                               )
                                       ],
                                   ),
-                                  const Text("Zoti: Chinniso", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  Text("Zoti: ${bird['breed']}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                   const SizedBox(height: 4),
-                                  const Text(
-                                    "500 000 UZS",
-                                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                                  Text(
+                                    "${bird['price']} UZS",
+                                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 8),
                                   SizedBox(

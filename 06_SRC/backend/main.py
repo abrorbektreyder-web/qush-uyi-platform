@@ -248,13 +248,53 @@ async def create_bird(bird: CreateBirdRequest):
 @app.get("/birds")
 async def get_birds(category: str = None, breed: str = None, is_verified: bool = None):
     # Filter logic
-    filtered_birds = BIRDS
-    if category and category != "Hammasi":
-        filtered_birds = [b for b in filtered_birds if b["category"].lower() == category.lower()]
-    if breed:
-        filtered_birds = [b for b in filtered_birds if breed.lower() in b["breed"].lower()]
-    if is_verified is not None:
-         filtered_birds = [b for b in filtered_birds if b.get("is_verified") == is_verified]
+    filtered_birds = []
+    
+    for bird in BIRDS:
+        # 1. Filter by Status (Active only)
+        if bird.get("status") != "active":
+            continue
+            
+        # 2. Filter by Category
+        if category and category != "Hammasi" and bird["category"].lower() != category.lower():
+            continue
+            
+        # 3. Filter by Breed
+        if breed and breed.lower() not in bird["breed"].lower():
+            continue
+            
+        # 4. Filter by Verification
+        if is_verified is not None and bird.get("is_verified") != is_verified:
+            continue
+            
+        # Enrich with User and Region info
+        # Find User
+        # USERS is a dict: phone -> user_data. 
+        # But bird["user_id"] might store ID or Phone. In our mock create, we used 'user_id' form field.
+        # Let's assume for mock purposes user_id maps to one of our mock users or we just return a placeholder if missing.
+        user_info = {"full_name": "Sotuvchi", "phone_number": "Noma'lum"}
+        for u in USERS.values():
+            if u.get("id") == bird["user_id"] or u.get("phone_number") == bird["user_id"]:
+                 user_info = {"full_name": u.get("full_name", "Foydalanuvchi"), "phone_number": u.get("phone_number")}
+                 break
+        
+        # Find Region
+        # REGIONS is a list of strings. region_id is an Int index?
+        # In create_bird, region_id is int. In get_regions, we return list of strings.
+        # Let's assume region_id 1-based index maps to REGIONS array (0-based)
+        region_name = "O'zbekiston"
+        try:
+            if 0 <= int(bird["region_id"]) - 1 < len(REGIONS):
+                region_name = REGIONS[int(bird["region_id"]) - 1]
+        except:
+            pass
+            
+        bird_response = bird.copy()
+        bird_response["seller_name"] = user_info["full_name"]
+        bird_response["seller_phone"] = user_info["phone_number"]
+        bird_response["region_name"] = region_name
+        
+        filtered_birds.append(bird_response)
         
     return filtered_birds
 

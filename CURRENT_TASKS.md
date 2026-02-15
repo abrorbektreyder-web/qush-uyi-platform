@@ -20,8 +20,8 @@ STATUS: [ ] Kutilmoqda | [x] Bajarildi | [~] Jarayonda
 [x] 3.3. Qush pasporti (QR Code) generatsiyasi.
 
 ### 🟢 4. MARKETPLACE (VITRINA)
-[ ] 4.1. Asosiy lenta (Feed) API va UI.
-[ ] 4.2. Qidiruv va Filtrlar (Viloyat, Narx, Zot).
+[x] 4.1. Asosiy lenta (Feed) API va UI.
+[ ] 4.2. Qidiruv va Filterlash (Backend/Frontend).
 [ ] 4.3. "Tasdiqlanganlar" alohida bo'limi.
 
 ### 🟡 5. PAYMENT & SOFT-ESCROW (MOLIYA)
