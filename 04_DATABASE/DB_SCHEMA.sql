@@ -15,6 +15,7 @@ CREATE TABLE users (
     telegram_id BIGINT UNIQUE,          -- Telegram Auth (Asosiy kirish)
     username VARCHAR(50) UNIQUE,        -- @user (Telegram username)
     full_name VARCHAR(100),
+    region_id INT REFERENCES regions(id), -- User's location
     avatar_url TEXT,
     
     -- Tizimdagi o'rni
@@ -43,11 +44,27 @@ CREATE TABLE vet_profiles (
 
 -- 2. LOKATSIYA VA KATEGORIYALAR (STATIC DATA)
 
-CREATE TABLE regions (
     id SERIAL PRIMARY KEY,
     name_uz VARCHAR(50),                -- "Andijon viloyati"
     name_ru VARCHAR(50)
 );
+
+-- Seed Regions
+INSERT INTO regions (name_uz, name_ru) VALUES
+('Andijon viloyati', 'Андижанская область'),
+('Buxoro viloyati', 'Бухарская область'),
+('Farg''ona viloyati', 'Ферганская область'),
+('Jizzax viloyati', 'Джизакская область'),
+('Xorazm viloyati', 'Хорезмская область'),
+('Namangan viloyati', 'Наманганская область'),
+('Navoiy viloyati', 'Навоийская область'),
+('Qashqadaryo viloyati', 'Кашкадарьинская область'),
+('Samarqand viloyati', 'Самаркандская область'),
+('Sirdaryo viloyati', 'Сырдарьинская область'),
+('Surxondaryo viloyati', 'Сурхандарьинская область'),
+('Toshkent viloyati', 'Ташкентская область'),
+('Toshkent shahri', 'г. Ташкент'),
+('Qoraqalpog''iston Respublikasi', 'Республика Каракалпакстан');
 
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,

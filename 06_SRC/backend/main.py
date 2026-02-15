@@ -22,8 +22,30 @@ class VerifyOtpRequest(BaseModel):
     phone: str
     code: str
 
+class UserUpdateProfileRequest(BaseModel):
+    full_name: str
+    region_id: int
+
 # In-memory storage for demo purposes (Use Redis/DB in production)
 otp_storage = {}
+
+# Mock Regions Data
+REGIONS = [
+    {"id": 1, "name_uz": "Andijon viloyati"},
+    {"id": 2, "name_uz": "Buxoro viloyati"},
+    {"id": 3, "name_uz": "Farg'ona viloyati"},
+    {"id": 4, "name_uz": "Jizzax viloyati"},
+    {"id": 5, "name_uz": "Xorazm viloyati"},
+    {"id": 6, "name_uz": "Namangan viloyati"},
+    {"id": 7, "name_uz": "Navoiy viloyati"},
+    {"id": 8, "name_uz": "Qashqadaryo viloyati"},
+    {"id": 9, "name_uz": "Samarqand viloyati"},
+    {"id": 10, "name_uz": "Sirdaryo viloyati"},
+    {"id": 11, "name_uz": "Surxondaryo viloyati"},
+    {"id": 12, "name_uz": "Toshkent viloyati"},
+    {"id": 13, "name_uz": "Toshkent shahri"},
+    {"id": 14, "name_uz": "Qoraqalpog'iston Respublikasi"},
+]
 
 @app.post("/auth/send-otp")
 async def send_otp(request: SendOtpRequest):
@@ -59,7 +81,27 @@ async def verify_otp(request: VerifyOtpRequest):
         "access_token": mock_token,
         "token_type": "bearer",
         "user_role": "user", # Default role
-        "is_new_user": True # Mock status
+        "is_new_user": True, # Always true for demo to trigger profile fill
+        "user": {
+            "id": "mock_user_id",
+            "phone": request.phone
+        }
+    }
+
+@app.get("/regions")
+async def get_regions():
+    return REGIONS
+
+@app.post("/user/update-profile")
+async def update_profile(request: UserUpdateProfileRequest):
+    # Mock update logic
+    return {
+        "status": "success",
+        "message": "Profile updated successfully",
+        "user": {
+            "full_name": request.full_name,
+            "region_id": request.region_id
+        }
     }
 
 @app.get("/")

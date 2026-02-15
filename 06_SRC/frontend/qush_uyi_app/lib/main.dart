@@ -73,16 +73,23 @@ class ResponsiveHome extends StatefulWidget {
 
 class _ResponsiveHomeState extends State<ResponsiveHome> {
   int _selectedIndex = 0;
+  bool _isLoggedIn = false; // Mock login state
 
   void _onItemTapped(int index) {
-    if (index > 0) {
-      // Index 0 is Home, anything else requires Auth for now
+    if (index > 0 && !_isLoggedIn) {
       _showAuthModal(context);
     } else {
       setState(() {
         _selectedIndex = index;
       });
     }
+  }
+    
+  // Public triggering method
+  void triggerAuth() {
+     if (!_isLoggedIn) {
+       _showAuthModal(context);
+     }
   }
 
   void _showAuthModal(BuildContext context) {
@@ -92,7 +99,26 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => const AuthModal(),
+      builder: (context) => AuthModal(onLoginSuccess: () {
+          setState(() {
+              _isLoggedIn = true;
+          });
+          Navigator.pop(context); // Close Auth Modal
+          _showProfileFillModal(context); // Open Profile Fill
+      }),
+    );
+  }
+  
+  void _showProfileFillModal(BuildContext context) {
+      showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false, // Force fill
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => const ProfileFillModal(),
     );
   }
 
@@ -106,7 +132,7 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
             appBar: AppBar(
               title: const Text("Qush Uyi Market"),
             ),
-            body: const HomeFeed(),
+            body: HomeFeed(triggerAuth: triggerAuth),
             bottomNavigationBar: BottomNavigationBar(
               currentIndex: _selectedIndex,
               onTap: _onItemTapped,
@@ -117,7 +143,13 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
               ],
             ),
             floatingActionButton: FloatingActionButton(
-              onPressed: () => _showAuthModal(context),
+              onPressed: () {
+                  if (!_isLoggedIn) {
+                      _showAuthModal(context);
+                  } else {
+                      // Navigate to Add Bird
+                  }
+              },
               child: const Icon(Icons.add),
             ),
           );
@@ -158,14 +190,18 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
                           Padding(
                             padding: const EdgeInsets.only(right: 16.0),
                             child: ElevatedButton.icon(
-                                onPressed: () => _showAuthModal(context),
+                                onPressed: () {
+                                    if (!_isLoggedIn) {
+                                      _showAuthModal(context);
+                                    }
+                                },
                                 icon: const Icon(Icons.add),
                                 label: const Text("E'lon Berish"),
                             ),
                           )
                       ],
                     ),
-                    body: const HomeFeed(gridCount: 3),
+                    body: HomeFeed(gridCount: 3, triggerAuth: triggerAuth),
                   ),
                 ),
               ],
@@ -179,7 +215,9 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
 
 class HomeFeed extends StatelessWidget {
   final int gridCount;
-  const HomeFeed({super.key, this.gridCount = 1});
+  final VoidCallback triggerAuth;
+  
+  const HomeFeed({super.key, this.gridCount = 1, required this.triggerAuth});
 
   @override
   Widget build(BuildContext context) {
@@ -224,14 +262,14 @@ class HomeFeed extends StatelessWidget {
                       "500 000 UZS",
                       style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: const [
-                        Icon(Icons.location_on, size: 14, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text("Toshkent", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      ],
-                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                            onPressed: triggerAuth,
+                            child: const Text("Sotib Olish"),
+                        ),
+                    )
                   ],
                 ),
               ),
@@ -244,7 +282,8 @@ class HomeFeed extends StatelessWidget {
 }
 
 class AuthModal extends StatefulWidget {
-  const AuthModal({super.key});
+  final VoidCallback onLoginSuccess;
+  const AuthModal({super.key, required this.onLoginSuccess});
 
   @override
   State<AuthModal> createState() => _AuthModalState();
@@ -256,18 +295,14 @@ class _AuthModalState extends State<AuthModal> {
   bool _codeSent = false;
 
   void _sendCode() {
-    // Mock API Call here
     setState(() {
       _codeSent = true;
     });
   }
 
   void _verifyCode() {
-    // Mock Verify here
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Muvaffaqiyatli kirdingiz!"))
-    );
+      // Logic: Verify Code -> If success -> Trigger Callback
+      widget.onLoginSuccess();
   }
 
   @override
@@ -329,6 +364,115 @@ class _AuthModalState extends State<AuthModal> {
                 foregroundColor: Colors.white,
               ),
               child: Text(_codeSent ? "TASDIQLASH" : "KOD OLISH"),
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+}
+
+class ProfileFillModal extends StatefulWidget {
+  const ProfileFillModal({super.key});
+
+  @override
+  State<ProfileFillModal> createState() => _ProfileFillModalState();
+}
+
+class _ProfileFillModalState extends State<ProfileFillModal> {
+    final _nameController = TextEditingController();
+    String? _selectedRegion;
+    
+    final List<String> _regions = [
+        "Toshkent shahri",
+        "Toshkent viloyati",
+        "Andijon viloyati",
+        "Buxoro viloyati",
+        "Farg'ona viloyati",
+        "Jizzax viloyati",
+        "Xorazm viloyati",
+        "Namangan viloyati",
+        "Navoiy viloyati",
+        "Qashqadaryo viloyati",
+        "Samarqand viloyati",
+        "Sirdaryo viloyati",
+        "Surxondaryo viloyati",
+        "Qoraqalpog'iston Respublikasi"
+    ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20,
+        right: 20,
+        top: 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Profilni to'ldirish",
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Ismingiz va hududingizni kiriting",
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 20),
+          
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: "Ismingiz",
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.person),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          DropdownButtonFormField<String>(
+              value: _selectedRegion,
+              decoration: const InputDecoration(
+                  labelText: "Hududni tanlang",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.map),
+              ),
+              items: _regions.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedRegion = newValue;
+                });
+              },
+          ),
+            
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () {
+                  if (_nameController.text.isNotEmpty && _selectedRegion != null) {
+                      Navigator.pop(context); // Close Profile Modal
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Profil saqlandi! Xush kelibsiz.")),
+                      );
+                  }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("SAQLASH VA DAVOM ETISH"),
             ),
           ),
           const SizedBox(height: 30),
