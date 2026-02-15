@@ -1,9 +1,20 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import random
+import os
+import shutil
+from typing import List
 
 app = FastAPI(title="Qush Uyi API", version="1.0")
+
+# Setup Uploads Directory
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Mount Uploads for Static Access (e.g. http://localhost:8000/uploads/file.jpg)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # CORS Configuration (Allow All for Web/Desktop dev)
 app.add_middleware(
@@ -13,6 +24,59 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ... (Auth Models & Endpoints remain same) ...
+
+# --- BIRD LISTING & MEDIA FEATURE ---
+
+@app.post("/birds/create-with-media")
+async def create_bird_with_media(
+    category: str = Form(...),
+    breed: str = Form(...),
+    price: float = Form(...),
+    description: str = Form(...),
+    region_id: int = Form(...),
+    user_id: str = Form(...),
+    files: List[UploadFile] = File(...)
+):
+    # 1. Validation
+    if not files or len(files) == 0:
+         raise HTTPException(status_code=400, detail="At least one image is required")
+    
+    saved_file_paths = []
+    
+    for file in files:
+        # Generate unique filename
+        file_ext = file.filename.split(".")[-1]
+        unique_name = f"{random.randint(100000, 999999)}_{file.filename}"
+        file_path = os.path.join(UPLOAD_DIR, unique_name)
+        
+        # 2. Save File
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # 3. Compress Video (Placeholder for FFMPEG)
+        if file.content_type.startswith("video"):
+            print(f"Server: Compressing video {unique_name} using FFMPEG...")
+            # subprocess.run(["ffmpeg", "-i", file_path, ...])
+            
+        saved_file_paths.append(f"/uploads/{unique_name}")
+
+    # 4. Save Bird Data
+    new_bird = {
+        "id": f"bird_{random.randint(10000, 99999)}",
+        "category": category,
+        "breed": breed,
+        "price": price,
+        "description": description,
+        "region_id": region_id,
+        "user_id": user_id,
+        "status": "active",
+        "media": saved_file_paths
+    }
+    
+    BIRDS.append(new_bird)
+    return {"status": "success", "bird": new_bird}
 
 # Models
 class SendOtpRequest(BaseModel):

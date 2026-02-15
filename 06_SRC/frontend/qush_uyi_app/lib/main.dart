@@ -359,8 +359,25 @@ class AddListingPage extends StatefulWidget {
 class _AddListingPageState extends State<AddListingPage> {
     final List<String> _categories = ["Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq", "Boshqa"];
     String? _selectedCategory;
-    final List<String> _regions = ["Toshkent shahri", "Toshkent viloyati", "Andijon viloyati", "Buxoro viloyati"]; // Mock shortened list
+    final List<String> _regions = ["Toshkent shahri", "Toshkent viloyati", "Andijon viloyati", "Buxoro viloyati"];
     String? _selectedRegion;
+    
+    // Mock Media List
+    final List<String> _mockSelectedFiles = []; 
+
+    void _pickMedia() {
+        // Mock Picker Logic
+        // In real app: ImagePicker().pickMultiImage() or pickVideo()
+        setState(() {
+             if (_mockSelectedFiles.length < 5) {
+                 _mockSelectedFiles.add("image_${_mockSelectedFiles.length + 1}.jpg");
+             } else {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                     const SnackBar(content: Text("Maksimal 5 ta fayl yuklash mumkin!"))
+                 );
+             }
+        });
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -374,6 +391,62 @@ class _AddListingPageState extends State<AddListingPage> {
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                                // MEDIA PICKER SECTION
+                                Container(
+                                    height: 120,
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: _mockSelectedFiles.length + 1,
+                                        itemBuilder: (context, index) {
+                                            if (index == 0) {
+                                                return GestureDetector(
+                                                    onTap: _pickMedia,
+                                                    child: Container(
+                                                        width: 100,
+                                                        margin: const EdgeInsets.only(right: 8),
+                                                        decoration: BoxDecoration(
+                                                            color: Colors.grey[200],
+                                                            borderRadius: BorderRadius.circular(8),
+                                                            border: Border.all(color: Colors.grey),
+                                                        ),
+                                                        child: const Column(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                                Icon(Icons.add_a_photo, color: Colors.grey),
+                                                                SizedBox(height: 4),
+                                                                Text("Rasm/Video", style: TextStyle(fontSize: 12)),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                );
+                                            }
+                                            return Container(
+                                                width: 100,
+                                                margin: const EdgeInsets.only(right: 8),
+                                                decoration: BoxDecoration(
+                                                    color: Colors.black12,
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    image: const DecorationImage(
+                                                        image: NetworkImage("https://via.placeholder.com/100"), // Mock Preview
+                                                        fit: BoxFit.cover
+                                                    )
+                                                ),
+                                                child: Align(
+                                                    alignment: Alignment.topRight,
+                                                    child: IconButton(
+                                                        icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                                                        onPressed: () {
+                                                            setState(() {
+                                                                _mockSelectedFiles.removeAt(index - 1);
+                                                            });
+                                                        },
+                                                    ),
+                                                ),
+                                            );
+                                        },
+                                    ),
+                                ),
                                 DropdownButtonFormField<String>(
                                     decoration: const InputDecoration(labelText: "Kategoriya", border: OutlineInputBorder()),
                                     value: _selectedCategory,
@@ -406,8 +479,12 @@ class _AddListingPageState extends State<AddListingPage> {
                                     height: 50,
                                     child: ElevatedButton(
                                         onPressed: () {
+                                            if (_mockSelectedFiles.isEmpty) {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kamida 1 ta rasm yuklang!")));
+                                                return;
+                                            }
                                             Navigator.pop(context);
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("E'lon joylandi!")));
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("E'lon va Media fayllar joylandi!")));
                                         },
                                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                                         child: const Text("E'LONNI JOYLASHTIRISH"),
