@@ -7,12 +7,12 @@ STATUS: [ ] Kutilmoqda | [x] Bajarildi | [~] Jarayonda
 ### 🟢 1. AUTH & USER MANAGEMENT (KIRISH)
 [x] 1.1. Guest Mode & Phone Auth (SMS Login).
 [x] 1.2. Telefon raqam (SMS) orqali kirish.
-[ ] 1.3. Foydalanuvchi rollarini (User, Seller, Vet, Admin) ajratish.
+[x] 1.3. Foydalanuvchi rollarini (User, Seller, Vet, Admin) ajratish.
 
 ### 🟢 2. BIRD MANAGEMENT (QUSH QO'SHISH)
 [x] 2.1. Qush ma'lumotlari formasi (CRUD).
 [x] 2.2. Media yuklash (Rasm/Video) va siqish (Compression).
-[ ] 2.3. Avtomatik e'lon joylash tizimi.
+[x] 2.3. Avtomatik e'lon joylash tizimi.
 
 ### 🟢 3. BIRD HISTORY & VERIFICATION (ISHONCH)
 [x] 3.1. Hujjat yuklash va Admin panelga yuborish.

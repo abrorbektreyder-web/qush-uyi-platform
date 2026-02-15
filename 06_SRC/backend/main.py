@@ -91,7 +91,7 @@ async def create_bird_with_media(
         "description": description,
         "region_id": region_id,
         "user_id": user_id,
-        "status": "active",
+        "status": "active", # Auto-publish (Task 2.3)
         "media": saved_file_paths,
         "document_url": document_url, # Store document path
         "is_verified": False # Default to False
@@ -179,16 +179,34 @@ async def get_regions():
     return REGIONS
 
 @app.post("/user/update-profile")
-async def update_profile(request: UserUpdateProfileRequest):
-    # Mock update logic
-    return {
-        "status": "success",
-        "message": "Profile updated successfully",
-        "user": {
-            "full_name": request.full_name,
-            "region_id": request.region_id
-        }
+async def update_profile(
+    phone_number: str = Form(...),
+    full_name: str = Form(...),
+    region_id: int = Form(...),
+    role: str = Form("user") # Default to user, can be 'seller'
+):
+    # Mock Update Logic
+    # In real app: UPDATE users SET full_name=..., region_id=..., role=... WHERE phone_number=...
+    
+    # Update local mock storage if exists (simplified)
+    for user in USERS.values():
+        if user.get("phone_number") == phone_number:
+            user["full_name"] = full_name
+            user["region_id"] = region_id
+            user["role"] = role
+            return {"status": "success", "user": user}
+            
+    # If not found, create (lazy create for mock)
+    new_user = {
+        "id": f"user_{random.randint(1000,9999)}",
+        "phone_number": phone_number,
+        "full_name": full_name,
+        "region_id": region_id,
+        "role": role 
     }
+    USERS[phone_number] = new_user
+    
+    return {"status": "success", "user": new_user}
 
 # --- BIRD LISTING FEATURE ---
 
@@ -212,16 +230,17 @@ async def get_categories():
     return CATEGORIES
 
 @app.post("/birds/create")
-async def create_bird(request: CreateBirdRequest):
+async def create_bird(bird: CreateBirdRequest):
     new_bird = {
-        "id": f"bird_{random.randint(10000, 99999)}",
-        "category": request.category,
-        "breed": request.breed,
-        "price": request.price,
-        "description": request.description,
-        "region_id": request.region_id,
-        "user_id": request.user_id,
-        "status": "active"
+        "id": f"bird_{len(BIRDS) + 1}",
+        "category": bird.category,
+        "breed": bird.breed,
+        "price": bird.price,
+        "description": bird.description,
+        "region_id": bird.region_id,
+        "user_id": bird.user_id,
+        "status": "active", # Auto-publish (Task 2.3)
+        "is_verified": False
     }
     BIRDS.append(new_bird)
     return {"status": "success", "bird": new_bird}
