@@ -227,6 +227,7 @@ class _HomeFeedState extends State<HomeFeed> {
     final List<String> _categories = ["Hammasi", "Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq"];
     String _selectedCategory = "Hammasi";
     final TextEditingController _breedController = TextEditingController();
+    bool _onlyVerified = false; // Verified Filter Toggle
 
   @override
   Widget build(BuildContext context) {
@@ -258,14 +259,35 @@ class _HomeFeedState extends State<HomeFeed> {
                             ),
                         ),
                         const SizedBox(height: 10),
-                        TextField(
-                            controller: _breedController,
-                            decoration: const InputDecoration(
-                                labelText: "Qush parodasi (Masalan: Chinniso)",
-                                prefixIcon: Icon(Icons.search),
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                            ),
+                        Row(
+                            children: [
+                                Expanded(
+                                    child: TextField(
+                                        controller: _breedController,
+                                        decoration: const InputDecoration(
+                                            labelText: "Qush parodasi",
+                                            prefixIcon: Icon(Icons.search),
+                                            border: OutlineInputBorder(),
+                                            contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                                            isDense: true,
+                                        ),
+                                    ),
+                                ),
+                                const SizedBox(width: 8),
+                                FilterChip(
+                                    label: const Text("Tasdiqlangan"),
+                                    selected: _onlyVerified,
+                                    onSelected: (bool value) {
+                                        setState(() {
+                                            _onlyVerified = value;
+                                        });
+                                    },
+                                    avatar: const Icon(Icons.verified, color: Colors.white, size: 16),
+                                    selectedColor: Colors.blue,
+                                    checkmarkColor: Colors.white,
+                                    labelStyle: TextStyle(color: _onlyVerified ? Colors.white : Colors.black),
+                                ),
+                            ],
                         ),
                     ],
                 ),
@@ -282,6 +304,10 @@ class _HomeFeedState extends State<HomeFeed> {
                   ),
                   itemCount: 8, // Mock count
                   itemBuilder: (context, index) {
+                    bool isMockVerified = index % 3 == 0; // Mock Verification logic
+                    
+                    if (_onlyVerified && !isMockVerified) return const SizedBox.shrink(); // Simple Client Side Filter Mock
+
                     return Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -317,9 +343,18 @@ class _HomeFeedState extends State<HomeFeed> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Sayroqi Kanareyka #${index + 1}",
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                Row(
+                                    children: [
+                                        Text(
+                                          "Sayroqi Kanareyka #${index + 1}",
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                        ),
+                                        if (isMockVerified) 
+                                            const Padding(
+                                                padding: EdgeInsets.only(left: 4),
+                                                child: Icon(Icons.verified, color: Colors.blue, size: 16),
+                                            )
+                                    ],
                                 ),
                                 const Text("Zoti: Chinniso", style: TextStyle(color: Colors.grey, fontSize: 12)),
                                 const SizedBox(height: 4),

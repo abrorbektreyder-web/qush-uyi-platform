@@ -227,15 +227,25 @@ async def create_bird(request: CreateBirdRequest):
     return {"status": "success", "bird": new_bird}
 
 @app.get("/birds")
-async def get_birds(category: str = None, breed: str = None):
+async def get_birds(category: str = None, breed: str = None, is_verified: bool = None):
     # Filter logic
     filtered_birds = BIRDS
-    if category:
+    if category and category != "Hammasi":
         filtered_birds = [b for b in filtered_birds if b["category"].lower() == category.lower()]
     if breed:
         filtered_birds = [b for b in filtered_birds if breed.lower() in b["breed"].lower()]
+    if is_verified is not None:
+         filtered_birds = [b for b in filtered_birds if b.get("is_verified") == is_verified]
         
     return filtered_birds
+
+@app.post("/admin/approve-bird/{bird_id}")
+async def approve_bird(bird_id: str):
+    for bird in BIRDS:
+        if bird["id"] == bird_id:
+            bird["is_verified"] = True
+            return {"status": "success", "message": f"Bird {bird_id} verified"}
+    raise HTTPException(status_code=404, detail="Bird not found")
 
 @app.get("/")
 async def root():
