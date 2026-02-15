@@ -13,6 +13,7 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     phone_number VARCHAR(15) UNIQUE,    -- +998... (SMS uchun)
     telegram_id BIGINT UNIQUE,          -- Telegram Auth (Asosiy kirish)
+    telegram_chat_id BIGINT UNIQUE,     -- [NEW] Telegram Linker (Bot notifications)
     username VARCHAR(50) UNIQUE,        -- @user (Telegram username)
     full_name VARCHAR(100),
     region_id INT REFERENCES regions(id), -- User's location
@@ -21,6 +22,10 @@ CREATE TABLE users (
     -- Tizimdagi o'rni
     role VARCHAR(20) DEFAULT 'user',    -- 'user', 'seller', 'vet', 'admin', 'driver'
     is_verified BOOLEAN DEFAULT FALSE,  -- Pasport ID orqali tasdiqlanganmi?
+
+    -- [NEW] Privacy Settings
+    show_phone BOOLEAN DEFAULT TRUE,
+    allow_telegram BOOLEAN DEFAULT TRUE,
     
     -- Ishonch va Moliya
     rating DECIMAL(3, 2) DEFAULT 0.00,  -- 0.00 dan 5.00 gacha
@@ -28,6 +33,18 @@ CREATE TABLE users (
     
     -- Tizim ma'lumotlari
     last_login TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- [NEW] TASK 5.2: TRANSACTIONS (ESCROW HOLD)
+CREATE TABLE transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id),  -- Transaction initiator (Buyer)
+    bird_id UUID REFERENCES birds(id),
+    amount DECIMAL(15, 2) NOT NULL,
+    payment_method VARCHAR(20),         -- 'click', 'payme'
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'held', 'released', 'refunded'
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

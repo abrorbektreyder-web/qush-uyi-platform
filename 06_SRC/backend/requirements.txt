@@ -1,8 +1,7 @@
 fastapi
 uvicorn
-sqlalchemy
 python-multipart
+sqlalchemy
+psycopg2-binary
 qrcode
 pillow
-psycopg2-binary
-python-multipart

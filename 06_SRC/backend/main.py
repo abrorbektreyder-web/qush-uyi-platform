@@ -1,22 +1,17 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import random
+from typing import List, Optional
 import os
 import shutil
-from typing import List
+import random
+import qrcode
+from io import BytesIO
 
-app = FastAPI(title="Qush Uyi API", version="1.0")
+app = FastAPI()
 
-# Setup Uploads Directory
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Mount Uploads for Static Access (e.g. http://localhost:8000/uploads/file.jpg)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-# CORS Configuration (Allow All for Web/Desktop dev)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,155 +20,97 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ... (Auth Models & Endpoints remain same) ...
+# Uploads
+UPLOAD_DIR = "uploads"
+QR_DIR = "uploads/qrcodes"
+DOC_DIR = "uploads/docs"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(QR_DIR, exist_ok=True)
+os.makedirs(DOC_DIR, exist_ok=True)
 
-# --- BIRD LISTING & MEDIA FEATURE ---
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Setup Uploads Directory for Documents
-DOCS_UPLOAD_DIR = "uploads/docs"
-os.makedirs(DOCS_UPLOAD_DIR, exist_ok=True)
+# --- MOCK DATA ---
+USERS = {}
+BIRDS = []
+REGIONS = [
+    "Toshkent shahri", "Toshkent viloyati", "Andijon", "Buxoro", "Jizzax", 
+    "Qashqadaryo", "Navoiy", "Namangan", "Samarqand", "Surxondaryo", 
+    "Sirdaryo", "Xorazm", "Farg'ona", "Qoraqalpog'iston"
+]
+TRANSACTIONS = []
 
-# ... (Previous code) ...
-
-# --- BIRD LISTING, MEDIA & VERIFICATION FEATURE ---
-
-@app.post("/upload/document")
-async def upload_document(file: UploadFile = File(...)):
-    # Generate unique filename for document
-    unique_name = f"doc_{random.randint(100000, 999999)}_{file.filename}"
-    file_path = os.path.join(DOCS_UPLOAD_DIR, unique_name)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    return {"status": "success", "url": f"/uploads/docs/{unique_name}"}
-
-@app.post("/birds/create-with-media")
-async def create_bird_with_media(
-    category: str = Form(...),
-    breed: str = Form(...),
-    price: float = Form(...),
-    description: str = Form(...),
-    region_id: int = Form(...),
-    user_id: str = Form(...),
-    document_url: str = Form(None), # Optional Document URL
-    files: List[UploadFile] = File(...)
-):
-    # 1. Validation
-    if not files or len(files) == 0:
-         raise HTTPException(status_code=400, detail="At least one image is required")
-    
-    saved_file_paths = []
-    
-    for file in files:
-        # Generate unique filename
-        file_ext = file.filename.split(".")[-1]
-        unique_name = f"{random.randint(100000, 999999)}_{file.filename}"
-        file_path = os.path.join(UPLOAD_DIR, unique_name)
-        
-        # 2. Save File
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        # 3. Compress Video (Placeholder for FFMPEG)
-        if file.content_type.startswith("video"):
-            print(f"Server: Compressing video {unique_name} using FFMPEG...")
-            # subprocess.run(["ffmpeg", "-i", file_path, ...])
-            
-        saved_file_paths.append(f"/uploads/{unique_name}")
-
-    # 4. Save Bird Data
-    new_bird = {
-        "id": f"bird_{random.randint(10000, 99999)}",
-        "category": category,
-        "breed": breed,
-        "price": price,
-        "description": description,
-        "region_id": region_id,
-        "user_id": user_id,
-        "status": "active", # Auto-publish (Task 2.3)
-        "media": saved_file_paths,
-        "document_url": document_url, # Store document path
-        "is_verified": False # Default to False
-    }
-    
-    BIRDS.append(new_bird)
-    return {"status": "success", "bird": new_bird}
-
-# Models
-class SendOtpRequest(BaseModel):
-    phone: str
-
+# --- MODELS ---
 class VerifyOtpRequest(BaseModel):
     phone: str
     code: str
 
+class SendOtpRequest(BaseModel):
+    phone: str
+
 class UserUpdateProfileRequest(BaseModel):
+    phone_number: str
     full_name: str
     region_id: int
+    role: str = "user"
+    show_phone: bool = True
+    allow_telegram: bool = True
 
-# In-memory storage for demo purposes (Use Redis/DB in production)
+class LinkTelegramRequest(BaseModel):
+    phone: str
+    telegram_chat_id: int
+
+class CreateBirdRequest(BaseModel):
+    category: str
+    breed: str
+    price: float
+    description: str
+    region_id: int
+    user_id: str
+
+class MockConfirmRequest(BaseModel):
+    transaction_id: str
+    category: Optional[str] = None
+    breed: Optional[str] = None
+    price: Optional[float] = None
+    description: Optional[str] = None
+    region_id: Optional[int] = None
+    user_id: Optional[str] = None
+
+
+
+class TransactionRequest(BaseModel):
+    bird_id: str
+    amount: float
+    payment_method: str # 'click' or 'payme'
+    buyer_id: str
+
+# --- AUTH ENDPOINTS ---
 otp_storage = {}
-
-# Mock Regions Data
-REGIONS = [
-    {"id": 1, "name_uz": "Andijon viloyati"},
-    {"id": 2, "name_uz": "Buxoro viloyati"},
-    {"id": 3, "name_uz": "Farg'ona viloyati"},
-    {"id": 4, "name_uz": "Jizzax viloyati"},
-    {"id": 5, "name_uz": "Xorazm viloyati"},
-    {"id": 6, "name_uz": "Namangan viloyati"},
-    {"id": 7, "name_uz": "Navoiy viloyati"},
-    {"id": 8, "name_uz": "Qashqadaryo viloyati"},
-    {"id": 9, "name_uz": "Samarqand viloyati"},
-    {"id": 10, "name_uz": "Sirdaryo viloyati"},
-    {"id": 11, "name_uz": "Surxondaryo viloyati"},
-    {"id": 12, "name_uz": "Toshkent viloyati"},
-    {"id": 13, "name_uz": "Toshkent shahri"},
-    {"id": 14, "name_uz": "Qoraqalpog'iston Respublikasi"},
-]
 
 @app.post("/auth/send-otp")
 async def send_otp(request: SendOtpRequest):
-    # Generate 4-digit mock code
-    mock_code = str(random.randint(1000, 9999))
+    mock_code = "1122" # Fixed mock code
     otp_storage[request.phone] = mock_code
-    
-    # In real app, send request to SMS provider here
-    return {
-        "message": "SMS sent successfully",
-        "debug_code": mock_code, # Returned for testing ease
-        "phone": request.phone
-    }
+    return {"message": "SMS sent", "debug_code": mock_code, "phone": request.phone}
 
 @app.post("/auth/verify-otp")
 async def verify_otp(request: VerifyOtpRequest):
     stored_code = otp_storage.get(request.phone)
+    if not stored_code or (request.code != stored_code and request.code != "1122"):
+        raise HTTPException(status_code=400, detail="Invalid OTP")
     
-    if not stored_code:
-        raise HTTPException(status_code=400, detail="OTP not sent or expired")
-    
-    if request.code != stored_code and request.code != "1122": # 1122 is master code
-        raise HTTPException(status_code=400, detail="Invalid OTP code")
-        
-    # Clear OTP after success
     if request.phone in otp_storage:
         del otp_storage[request.phone]
         
-    # Generate Mock JWT
-    mock_token = f"ey_mock_jwt_token_for_{request.phone}"
-    
     return {
-        "access_token": mock_token,
+        "access_token": f"mock_token_{request.phone}",
         "token_type": "bearer",
-        "user_role": "user", # Default role
-        "is_new_user": True, # Always true for demo to trigger profile fill
-        "user": {
-            "id": "mock_user_id",
-            "phone": request.phone
-        }
+        "user_role": USERS.get(request.phone, {}).get("role", "user"),
+        "is_new_user": request.phone not in USERS
     }
 
+# --- USER ENDPOINTS ---
 @app.get("/regions")
 async def get_regions():
     return REGIONS
@@ -183,47 +120,42 @@ async def update_profile(
     phone_number: str = Form(...),
     full_name: str = Form(...),
     region_id: int = Form(...),
-    role: str = Form("user") # Default to user, can be 'seller'
+    role: str = Form("user")
 ):
-    # Mock Update Logic
-    # In real app: UPDATE users SET full_name=..., region_id=..., role=... WHERE phone_number=...
-    
-    # Update local mock storage if exists (simplified)
-    for user in USERS.values():
-        if user.get("phone_number") == phone_number:
-            user["full_name"] = full_name
-            user["region_id"] = region_id
-            user["role"] = role
-            return {"status": "success", "user": user}
-            
-    # If not found, create (lazy create for mock)
-    new_user = {
-        "id": f"user_{random.randint(1000,9999)}",
-        "phone_number": phone_number,
-        "full_name": full_name,
+    user = USERS.get(phone_number, {"id": f"u_{random.randint(1000,9999)}", "phone_number": phone_number})
+    user.update({
+        "full_name": full_name, 
         "region_id": region_id,
-        "role": role 
-    }
-    USERS[phone_number] = new_user
+        "role": role,
+        "show_phone": True,  # Default
+        "allow_telegram": True # Default
+    })
+    USERS[phone_number] = user
+    return {"status": "success", "user": user}
+
+@app.post("/user/link-telegram")
+async def link_telegram(request: LinkTelegramRequest):
+    user = USERS.get(request.phone)
+    if not user: raise HTTPException(404, "User not found")
     
-    return {"status": "success", "user": new_user}
+    user["telegram_chat_id"] = request.telegram_chat_id
+    USERS[request.phone] = user
+    return {"status": "success", "message": "Telegram successfully linked", "user": user}
 
-# --- BIRD LISTING FEATURE ---
+@app.post("/user/update-settings")
+async def update_settings(request: UserUpdateProfileRequest):
+    user = USERS.get(request.phone_number)
+    if not user: raise HTTPException(404, "User not found")
+    
+    user.update({
+        "show_phone": request.show_phone,
+        "allow_telegram": request.allow_telegram
+    })
+    USERS[request.phone_number] = user
+    return {"status": "success", "user": user}
 
-class CreateBirdRequest(BaseModel):
-    category: str
-    breed: str
-    price: float
-    description: str
-    region_id: int
-    user_id: str # In real app, get from Token
-
-# Mock Bird Data
-BIRDS = []
-
-CATEGORIES = [
-    "Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq", "O'rdak", "G'oz", "Boshqa"
-]
+# --- BIRD ENDPOINTS ---
+CATEGORIES = ["Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq", "O'rdak", "G'oz", "Boshqa"]
 
 @app.get("/categories")
 async def get_categories():
@@ -231,15 +163,47 @@ async def get_categories():
 
 @app.post("/birds/create")
 async def create_bird(bird: CreateBirdRequest):
+    new_bird = bird.dict()
+    new_bird.update({
+        "id": f"bird_{len(BIRDS)+1}", 
+        "status": "active", 
+        "is_verified": False,
+        "media": [],
+        "document_url": None
+    })
+    BIRDS.append(new_bird)
+    return {"status": "success", "bird": new_bird}
+
+@app.post("/birds/create-with-media")
+async def create_bird_with_media(
+    category: str = Form(...),
+    breed: str = Form(...),
+    price: float = Form(...),
+    description: str = Form(...),
+    region_id: int = Form(...),
+    user_id: str = Form(...),
+    files: List[UploadFile] = File(...),
+    document_url: str = Form(None)
+):
+    saved_paths = []
+    for file in files:
+        unique_name = f"{random.randint(10000,99999)}_{file.filename}"
+        path = os.path.join(UPLOAD_DIR, unique_name)
+        with open(path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        saved_paths.append(f"/uploads/{unique_name}")
+        
     new_bird = {
-        "id": f"bird_{len(BIRDS) + 1}",
-        "category": bird.category,
-        "breed": bird.breed,
-        "price": bird.price,
-        "description": bird.description,
-        "region_id": bird.region_id,
-        "user_id": bird.user_id,
-        "status": "active", # Auto-publish (Task 2.3)
+        "id": f"bird_{len(BIRDS)+1}",
+        "category": category,
+        "breed": breed,
+        "price": price,
+        "description": description,
+        "region_id": region_id,
+        "user_id": user_id,
+        "status": "active",
+        "media": saved_paths,
+        "document_url": document_url,
         "is_verified": False
     }
     BIRDS.append(new_bird)
@@ -247,128 +211,150 @@ async def create_bird(bird: CreateBirdRequest):
 
 @app.get("/birds")
 async def get_birds(category: str = None, breed: str = None, is_verified: bool = None, q: str = None):
-    # Filter logic
-    filtered_birds = []
-    
+    results = []
     for bird in BIRDS:
-        # 1. Filter by Status (Active only)
-        if bird.get("status") != "active":
-            continue
-            
-        # 2. Search Query (q)
+        # Show 'active' and 'held' (so we can display "Sold/Held" badge)
+        if bird.get("status") not in ["active", "held"]: continue
+        
+        # Filtering
+        if category and category != "Hammasi" and bird["category"].lower() != category.lower(): continue
+        if breed and breed.lower() not in bird["breed"].lower(): continue
+        if is_verified is not None and bird.get("is_verified") != is_verified: continue
+        
+        # Search
         if q:
-            # Search in Category or Breed (Case insensitive)
             query = q.lower()
-            if query not in bird["category"].lower() and query not in bird["breed"].lower():
-                continue
-
-        # 3. Filter by Category
-        if category and category != "Hammasi" and bird["category"].lower() != category.lower():
-            continue
+            if query not in bird["category"].lower() and query not in bird["breed"].lower(): continue
             
-        # 4. Filter by Breed
-        if breed and breed.lower() not in bird["breed"].lower():
-            continue
-            
-        # 5. Filter by Verification
-        if is_verified is not None and bird.get("is_verified") != is_verified:
-            continue
-            
-        # Enrich with User and Region info
-        # Find User
-        # USERS is a dict: phone -> user_data. 
-        # But bird["user_id"] might store ID or Phone. In our mock create, we used 'user_id' form field.
-        # Let's assume for mock purposes user_id maps to one of our mock users or we just return a placeholder if missing.
-        user_info = {"full_name": "Sotuvchi", "phone_number": "Noma'lum"}
-        for u in USERS.values():
-            if u.get("id") == bird["user_id"] or u.get("phone_number") == bird["user_id"]:
-                 user_info = {"full_name": u.get("full_name", "Foydalanuvchi"), "phone_number": u.get("phone_number")}
-                 break
+        # Enrich
+        user = next((u for u in USERS.values() if u.get("id") == bird["user_id"] or u.get("phone_number") == bird["user_id"]), {"full_name": "Sotuvchi", "phone_number": "Noma'lum"})
+        region_name = REGIONS[int(bird["region_id"])-1] if 0 <= int(bird["region_id"])-1 < len(REGIONS) else "Noma'lum"
         
-        # Find Region
-        # REGIONS is a list of strings. region_id is an Int index?
-        # In create_bird, region_id is int. In get_regions, we return list of strings.
-        # Let's assume region_id 1-based index maps to REGIONS array (0-based)
-        region_name = "O'zbekiston"
-        try:
-            if 0 <= int(bird["region_id"]) - 1 < len(REGIONS):
-                region_name = REGIONS[int(bird["region_id"]) - 1]
-        except:
-            pass
-            
-        bird_response = bird.copy()
-        bird_response["seller_name"] = user_info["full_name"]
-        bird_response["seller_phone"] = user_info["phone_number"]
-        bird_response["region_name"] = region_name
-        
-        filtered_birds.append(bird_response)
-        
-    return filtered_birds
+        bird_resp = bird.copy()
+        bird_resp.update({
+            "seller_name": user["full_name"],
+            "seller_phone": user["phone_number"],
+            "region_name": region_name
+        })
+        results.append(bird_resp)
+    return results
 
-@app.post("/admin/approve-bird/{bird_id}")
-async def approve_bird(bird_id: str):
-    for bird in BIRDS:
-        if bird["id"] == bird_id:
-            bird["is_verified"] = True
-            return {"status": "success", "message": f"Bird {bird_id} verified"}
-    raise HTTPException(status_code=404, detail="Bird not found")
-
-try:
-    import qrcode
-except ImportError:
-    qrcode = None
-
-# Setup Uploads Directory for QR Codes
-QR_UPLOAD_DIR = "uploads/qrcodes"
-os.makedirs(QR_UPLOAD_DIR, exist_ok=True)
-
-# ...
-
+# --- VERIFICATION & PASSPORT ---
 @app.post("/birds/{bird_id}/generate-passport")
 async def generate_passport(bird_id: str):
     # Find Bird
     bird = next((b for b in BIRDS if b["id"] == bird_id), None)
-    if not bird:
-        raise HTTPException(status_code=404, detail="Bird not found")
-        
-    qr_filename = f"qr_{bird_id}.png"
-    qr_path = os.path.join(QR_UPLOAD_DIR, qr_filename)
+    if not bird: raise HTTPException(404, "Bird not found")
     
-    # Generate QR Code
-    if qrcode:
-        # Data to encode (e.g., link to bird detail)
-        qr_data = f"https://qushuyi.uz/birds/{bird_id}"
-        img = qrcode.make(qr_data)
-        img.save(qr_path)
-    else:
-        # Mock QR creation if library not installed
-        with open(qr_path, "wb") as f:
-            f.write(b"Mock QR Code Content") 
-            
-    # Update Bird with QR Path
-    bird["passport_qr"] = f"/uploads/qrcodes/{qr_filename}"
+    # Generate QR
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(f"https://qush-uyi.uz/birds/{bird_id}")
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
     
-    return {"status": "success", "qr_url": bird["passport_qr"]}
+    filename = f"{bird_id}_passport.png"
+    filepath = os.path.join(QR_DIR, filename)
+    img.save(filepath)
+    
+    return {"status": "success", "passport_url": f"/uploads/qrcodes/{filename}"}
 
 @app.get("/birds/{bird_id}/passport")
-async def get_bird_passport(bird_id: str):
+async def get_passport(bird_id: str):
     bird = next((b for b in BIRDS if b["id"] == bird_id), None)
-    if not bird:
-        raise HTTPException(status_code=404, detail="Bird not found")
-        
-    # Auto-generate if missing
-    if "passport_qr" not in bird:
+    if not bird: raise HTTPException(404, "Bird not found")
+    
+    # Check if passport exists or generate on fly
+    filename = f"{bird_id}_passport.png"
+    if not os.path.exists(os.path.join(QR_DIR, filename)):
         await generate_passport(bird_id)
         
     return {
-        "bird_name": f"{bird['category']} - {bird['breed']}",
-        "is_verified": bird.get("is_verified", False),
-        "qr_code": bird.get("passport_qr"),
-        "owner_id": bird["user_id"],
-        "region_id": bird["region_id"],
-        "issued_at": "2026-02-15" # Mock date
+        "bird": bird,
+        "passport_url": f"/uploads/qrcodes/{filename}",
+        "is_verified": bird.get("is_verified", False)
     }
 
-@app.get("/")
-async def root():
-    return {"message": "Qush Uyi API is running"}
+# --- PAYMENT (TASK 5.1) ---
+@app.post("/pay/process")
+async def process_payment(request: TransactionRequest):
+    if request.amount <= 0: raise HTTPException(400, "Invalid amount")
+    
+    # Check if bird is already held or sold
+    bird = next((b for b in BIRDS if b["id"] == request.bird_id), None)
+    if not bird: raise HTTPException(404, "Bird not found")
+    if bird["status"] != "active": raise HTTPException(400, "Bird is not available")
+
+    tx_id = f"tx_{random.randint(100000, 999999)}"
+    transaction = {
+        "id": tx_id,
+        "bird_id": request.bird_id,
+        "amount": request.amount,
+        "payment_method": request.payment_method,
+        "buyer_id": request.buyer_id,
+        "status": "held", # ESCROW HOLD
+        "timestamp": "2023-10-27T10:00:00Z"
+    }
+    TRANSACTIONS.append(transaction)
+    
+    # UPDATE BIRD STATUS
+    bird["status"] = "held"
+    print(f"💰 ESCROW HOLD ACTIVATED: Bird {bird['id']} is now HELD for Transaction {tx_id}")
+    
+    return {"status": "success", "transaction": transaction}
+    
+@app.post("/pay/mock-confirm")
+async def confirm_payment(request: MockConfirmRequest):
+    # Find transaction
+    tx = next((t for t in TRANSACTIONS if t["id"] == request.transaction_id), None)
+    if not tx: raise HTTPException(404, "Transaction not found")
+    
+    # Update Status to HELD (if not already)
+    tx["status"] = "held"
+    tx["updated_at"] = "2023-10-27T10:05:00Z"
+    
+    # Ensure Bird is Held
+    bird = next((b for b in BIRDS if b["id"] == tx["bird_id"]), None)
+    if bird:
+        bird["status"] = "held"
+    
+    return {
+        "status": "success",
+        "message": "Payment confirmed. Money is now HELD in Escrow.",
+        "transaction": tx
+    }
+
+# --- DISPUTE & REFUND (TASK 5.3) ---
+@app.post("/pay/dispute/{transaction_id}")
+async def open_dispute(transaction_id: str):
+    tx = next((t for t in TRANSACTIONS if t["id"] == transaction_id), None)
+    if not tx: raise HTTPException(404, "Transaction not found")
+    
+    if tx["status"] != "held":
+        raise HTTPException(400, "Only held transactions can be disputed")
+        
+    tx["status"] = "disputed"
+    
+    # Update Bird Status
+    bird = next((b for b in BIRDS if b["id"] == tx["bird_id"]), None)
+    if bird:
+        bird["status"] = "disputed"
+        
+    return {"status": "success", "message": "Dispute opened", "transaction": tx}
+
+@app.post("/pay/refund/{transaction_id}")
+async def process_refund(transaction_id: str):
+    tx = next((t for t in TRANSACTIONS if t["id"] == transaction_id), None)
+    if not tx: raise HTTPException(404, "Transaction not found")
+    
+    # Allow refunding held or disputed transactions
+    if tx["status"] not in ["held", "disputed"]:
+        raise HTTPException(400, "Transaction cannot be refunded")
+        
+    tx["status"] = "refunded"
+    
+    # Release Bird back to Active
+    bird = next((b for b in BIRDS if b["id"] == tx["bird_id"]), None)
+    if bird:
+        bird["status"] = "active"
+        
+    return {"status": "success", "message": "Money refunded to buyer. Bird is active again.", "transaction": tx}
