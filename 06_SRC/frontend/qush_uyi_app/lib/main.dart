@@ -364,10 +364,10 @@ class _AddListingPageState extends State<AddListingPage> {
     
     // Mock Media List
     final List<String> _mockSelectedFiles = []; 
+    String? _attachedDocument; // Mock document path
 
     void _pickMedia() {
         // Mock Picker Logic
-        // In real app: ImagePicker().pickMultiImage() or pickVideo()
         setState(() {
              if (_mockSelectedFiles.length < 5) {
                  _mockSelectedFiles.add("image_${_mockSelectedFiles.length + 1}.jpg");
@@ -376,6 +376,13 @@ class _AddListingPageState extends State<AddListingPage> {
                      const SnackBar(content: Text("Maksimal 5 ta fayl yuklash mumkin!"))
                  );
              }
+        });
+    }
+
+    void _pickDocument() {
+        // Mock Document Picker
+        setState(() {
+            _attachedDocument = "bird_passport_${DateTime.now().millisecondsSinceEpoch}.pdf";
         });
     }
 
@@ -474,6 +481,43 @@ class _AddListingPageState extends State<AddListingPage> {
                                     items: _regions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                                     onChanged: (v) => setState(() => _selectedRegion = v),
                                 ),
+                                const SizedBox(height: 16),
+
+                                // DOCUMENT UPLOAD SECTION (Optional)
+                                Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.blue[50], // Light blue to highlight importance
+                                    ),
+                                    child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                            const Text("Hujjat yuklash (Ixtiyoriy)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                            const SizedBox(height: 4),
+                                            const Text("Pasport yoki Vet-ma'lumotnoma yuklasangiz, 'Tasdiqlangan' belgisini olasiz.", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                            const SizedBox(height: 8),
+                                            if (_attachedDocument != null)
+                                                ListTile(
+                                                    leading: const Icon(Icons.description, color: Colors.blue),
+                                                    title: Text(_attachedDocument!, overflow: TextOverflow.ellipsis),
+                                                    trailing: IconButton(
+                                                        icon: const Icon(Icons.close, color: Colors.red),
+                                                        onPressed: () => setState(() => _attachedDocument = null),
+                                                    ),
+                                                    contentPadding: EdgeInsets.zero,
+                                                )
+                                            else
+                                                OutlinedButton.icon(
+                                                    onPressed: _pickDocument,
+                                                    icon: const Icon(Icons.upload_file),
+                                                    label: const Text("Hujjatni tanlash (Rasm/PDF)"),
+                                                ),
+                                        ],
+                                    ),
+                                ),
+
                                 const SizedBox(height: 24),
                                 SizedBox(
                                     height: 50,
@@ -484,7 +528,12 @@ class _AddListingPageState extends State<AddListingPage> {
                                                 return;
                                             }
                                             Navigator.pop(context);
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("E'lon va Media fayllar joylandi!")));
+                                            
+                                            String msg = "E'lon va Media fayllar joylandi!";
+                                            if (_attachedDocument != null) {
+                                                msg += " Hujjat tekshiruvga yuborildi.";
+                                            }
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
                                         },
                                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                                         child: const Text("E'LONNI JOYLASHTIRISH"),

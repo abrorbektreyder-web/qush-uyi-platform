@@ -29,6 +29,25 @@ app.add_middleware(
 
 # --- BIRD LISTING & MEDIA FEATURE ---
 
+# Setup Uploads Directory for Documents
+DOCS_UPLOAD_DIR = "uploads/docs"
+os.makedirs(DOCS_UPLOAD_DIR, exist_ok=True)
+
+# ... (Previous code) ...
+
+# --- BIRD LISTING, MEDIA & VERIFICATION FEATURE ---
+
+@app.post("/upload/document")
+async def upload_document(file: UploadFile = File(...)):
+    # Generate unique filename for document
+    unique_name = f"doc_{random.randint(100000, 999999)}_{file.filename}"
+    file_path = os.path.join(DOCS_UPLOAD_DIR, unique_name)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    return {"status": "success", "url": f"/uploads/docs/{unique_name}"}
+
 @app.post("/birds/create-with-media")
 async def create_bird_with_media(
     category: str = Form(...),
@@ -37,6 +56,7 @@ async def create_bird_with_media(
     description: str = Form(...),
     region_id: int = Form(...),
     user_id: str = Form(...),
+    document_url: str = Form(None), # Optional Document URL
     files: List[UploadFile] = File(...)
 ):
     # 1. Validation
@@ -72,7 +92,9 @@ async def create_bird_with_media(
         "region_id": region_id,
         "user_id": user_id,
         "status": "active",
-        "media": saved_file_paths
+        "media": saved_file_paths,
+        "document_url": document_url, # Store document path
+        "is_verified": False # Default to False
     }
     
     BIRDS.append(new_bird)
