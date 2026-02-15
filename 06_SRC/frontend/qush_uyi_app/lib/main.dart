@@ -85,7 +85,6 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
     }
   }
     
-  // Public triggering method
   void triggerAuth() {
      if (!_isLoggedIn) {
        _showAuthModal(context);
@@ -103,8 +102,8 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
           setState(() {
               _isLoggedIn = true;
           });
-          Navigator.pop(context); // Close Auth Modal
-          _showProfileFillModal(context); // Open Profile Fill
+          Navigator.pop(context);
+          _showProfileFillModal(context);
       }),
     );
   }
@@ -113,13 +112,24 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
       showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      isDismissible: false, // Force fill
+      isDismissible: false,
       enableDrag: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => const ProfileFillModal(),
     );
+  }
+  
+  void _openAddListingPage(BuildContext context) {
+      if (!_isLoggedIn) {
+          _showAuthModal(context);
+          return;
+      }
+      Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AddListingPage()),
+      );
   }
 
   @override
@@ -143,13 +153,7 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
               ],
             ),
             floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                  if (!_isLoggedIn) {
-                      _showAuthModal(context);
-                  } else {
-                      // Navigate to Add Bird
-                  }
-              },
+              onPressed: () => _openAddListingPage(context),
               child: const Icon(Icons.add),
             ),
           );
@@ -190,11 +194,7 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
                           Padding(
                             padding: const EdgeInsets.only(right: 16.0),
                             child: ElevatedButton.icon(
-                                onPressed: () {
-                                    if (!_isLoggedIn) {
-                                      _showAuthModal(context);
-                                    }
-                                },
+                                onPressed: () => _openAddListingPage(context),
                                 icon: const Icon(Icons.add),
                                 label: const Text("E'lon Berish"),
                             ),
@@ -213,74 +213,211 @@ class _ResponsiveHomeState extends State<ResponsiveHome> {
   }
 }
 
-class HomeFeed extends StatelessWidget {
+class HomeFeed extends StatefulWidget {
   final int gridCount;
   final VoidCallback triggerAuth;
   
   const HomeFeed({super.key, this.gridCount = 1, required this.triggerAuth});
 
   @override
+  State<HomeFeed> createState() => _HomeFeedState();
+}
+
+class _HomeFeedState extends State<HomeFeed> {
+    final List<String> _categories = ["Hammasi", "Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq"];
+    String _selectedCategory = "Hammasi";
+    final TextEditingController _breedController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: gridCount == 1 ? 1 : 4, // Responsive Grid
-        childAspectRatio: gridCount == 1 ? 1.5 : 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: 12,
-      itemBuilder: (context, index) {
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  ),
-                  child: Center(
-                    child: Icon(Icons.image, size: 50, color: Colors.grey[500]),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12.0),
+    return Column(
+        children: [
+            // Search & Filter Header
+            Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Qush E'lon #${index + 1}",
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "500 000 UZS",
-                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                            onPressed: triggerAuth,
-                            child: const Text("Sotib Olish"),
+                    children: [
+                        SingleChildScrollView( // Category Tabs
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                                children: _categories.map((category) {
+                                    final isSelected = _selectedCategory == category;
+                                    return Padding(
+                                        padding: const EdgeInsets.only(right: 8.0),
+                                        child: ChoiceChip(
+                                            label: Text(category),
+                                            selected: isSelected,
+                                            onSelected: (selected) {
+                                                setState(() {
+                                                    _selectedCategory = category;
+                                                });
+                                            },
+                                        ),
+                                    );
+                                }).toList(),
+                            ),
                         ),
-                    )
-                  ],
+                        const SizedBox(height: 10),
+                        TextField(
+                            controller: _breedController,
+                            decoration: const InputDecoration(
+                                labelText: "Qush parodasi (Masalan: Chinniso)",
+                                prefixIcon: Icon(Icons.search),
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                            ),
+                        ),
+                    ],
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+            
+            Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: widget.gridCount == 1 ? 1 : 4,
+                    childAspectRatio: widget.gridCount == 1 ? 1.5 : 0.8,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: 8, // Mock count
+                  itemBuilder: (context, index) {
+                    return Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                              ),
+                              child: Stack(
+                                children: [
+                                    Center(child: Icon(Icons.image, size: 50, color: Colors.grey[400])),
+                                    Positioned(
+                                        top: 8, right: 8,
+                                        child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                borderRadius: BorderRadius.circular(8)
+                                            ),
+                                            child: const Text("Toshkent", style: TextStyle(color: Colors.white, fontSize: 10)),
+                                        ),
+                                    )
+                                ],
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Sayroqi Kanareyka #${index + 1}",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const Text("Zoti: Chinniso", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  "500 000 UZS",
+                                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton(
+                                        onPressed: widget.triggerAuth,
+                                        child: const Text("Sotib Olish"),
+                                    ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+            ),
+        ],
     );
   }
 }
 
+class AddListingPage extends StatefulWidget {
+  const AddListingPage({super.key});
+
+  @override
+  State<AddListingPage> createState() => _AddListingPageState();
+}
+
+class _AddListingPageState extends State<AddListingPage> {
+    final List<String> _categories = ["Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq", "Boshqa"];
+    String? _selectedCategory;
+    final List<String> _regions = ["Toshkent shahri", "Toshkent viloyati", "Andijon viloyati", "Buxoro viloyati"]; // Mock shortened list
+    String? _selectedRegion;
+
+    @override
+    Widget build(BuildContext context) {
+        return Scaffold(
+            appBar: AppBar(title: const Text("Yangi E'lon")),
+            body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                    children: [
+                        DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(labelText: "Kategoriya", border: OutlineInputBorder()),
+                            value: _selectedCategory,
+                            items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                            onChanged: (v) => setState(() => _selectedCategory = v),
+                        ),
+                        const SizedBox(height: 16),
+                        const TextField(
+                            decoration: InputDecoration(labelText: "Paroda (Zoti)", border: OutlineInputBorder()),
+                        ),
+                        const SizedBox(height: 16),
+                        const TextField(
+                            decoration: InputDecoration(labelText: "Narx (UZS)", border: OutlineInputBorder(), suffixText: "UZS"),
+                            keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 16),
+                        const TextField(
+                            decoration: InputDecoration(labelText: "Batafsil ma'lumot", border: OutlineInputBorder()),
+                            maxLines: 4,
+                        ),
+                         const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(labelText: "Sizning Hududingiz (Info uchun)", border: OutlineInputBorder()),
+                            value: _selectedRegion,
+                            items: _regions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                            onChanged: (v) => setState(() => _selectedRegion = v),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                                onPressed: () {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("E'lon joylandi!")));
+                                },
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                child: const Text("E'LONNI JOYLASHTIRISH"),
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        );
+    }
+}
+
+// Reuse AuthModal and ProfileFillModal from Task 1.2
 class AuthModal extends StatefulWidget {
   final VoidCallback onLoginSuccess;
   const AuthModal({super.key, required this.onLoginSuccess});

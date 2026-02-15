@@ -104,6 +104,53 @@ async def update_profile(request: UserUpdateProfileRequest):
         }
     }
 
+# --- BIRD LISTING FEATURE ---
+
+class CreateBirdRequest(BaseModel):
+    category: str
+    breed: str
+    price: float
+    description: str
+    region_id: int
+    user_id: str # In real app, get from Token
+
+# Mock Bird Data
+BIRDS = []
+
+CATEGORIES = [
+    "Kabutar", "To'ti", "Kanareyka", "Bedana", "Tovuq", "O'rdak", "G'oz", "Boshqa"
+]
+
+@app.get("/categories")
+async def get_categories():
+    return CATEGORIES
+
+@app.post("/birds/create")
+async def create_bird(request: CreateBirdRequest):
+    new_bird = {
+        "id": f"bird_{random.randint(10000, 99999)}",
+        "category": request.category,
+        "breed": request.breed,
+        "price": request.price,
+        "description": request.description,
+        "region_id": request.region_id,
+        "user_id": request.user_id,
+        "status": "active"
+    }
+    BIRDS.append(new_bird)
+    return {"status": "success", "bird": new_bird}
+
+@app.get("/birds")
+async def get_birds(category: str = None, breed: str = None):
+    # Filter logic
+    filtered_birds = BIRDS
+    if category:
+        filtered_birds = [b for b in filtered_birds if b["category"].lower() == category.lower()]
+    if breed:
+        filtered_birds = [b for b in filtered_birds if breed.lower() in b["breed"].lower()]
+        
+    return filtered_birds
+
 @app.get("/")
 async def root():
     return {"message": "Qush Uyi API is running"}
