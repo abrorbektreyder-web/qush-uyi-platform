@@ -1,0 +1,153 @@
+================================================================================
+LOYIHA PASPORTI: "QUSH UYI" EKOTIZIMI
+Hujjat turi: Master Texnik Topshiriq (Source of Truth)
+Versiya: 7.0 (Ultimate Merged Edition)
+Platforma: Mobil Ilova (Flutter - Android / iOS / Web)
+Backend: Python (FastAPI)
+Holati: Dasturlashga tayyor
+================================================================================
+
+--------------------------------------------------------------------------------
+1-BO‘LIM. KIRISH VA BIZNES MANTIG‘I
+--------------------------------------------------------------------------------
+
+1.1. LOYIHA MAQSADI
+"QUSH UYI" — O‘zbekiston qush bozorini raqamlashtiruvchi Gibrid Platforma.
+Gibrid Model: Foydalanuvchilar o‘zaro qush sotadi (Marketplace) + Admin yem va dori sotadi (Official Shop).
+
+1.2. USER ROLLAR (ROLLAR TIZIMI):
+   1. USER (Xaridor): Qush va mahsulot sotib oladi. Mehmon sifatida kira oladi.
+   2. SELLER (Sotuvchi): Qush sotuvga qo‘yadi (Hujjatli yoki Hujjatsiz).
+   3. VET (Veterinar): Masofadan turib qush videolarini ko‘radi va xulosa beradi.
+   4. ADMIN: Tizimni va "Official Shop"ni boshqaradi.
+
+1.3. MUAMMOLAR VA YECHIMLAR
+-------------------------------------------------------
+MUAMMO             | "QUSH UYI" YECHIMI
+-------------------------------------------------------
+Kirish qiyinligi   | Mehmon Rejimi: Ilova darhol ochiladi, login faqat savdo paytida.
+Ishonchsizlik      | Escrow (Hold): Pul Admin hisobida muzlatiladi.
+Kasal qushlar      | Vet-Ko‘rik: Veterinarlar videoni ko‘rib "Sog‘lom" deb tasdiqlaydi.
+Katta videolar     | Auto-Compress: Videolar serverda avtomatik siqiladi.
+Noqulaylik         | Sahifalash (Pagination): Cheksiz lenta o‘rniga tartibli sahifalar.
+-------------------------------------------------------
+
+--------------------------------------------------------------------------------
+2-BO‘LIM. TEXNIK VAZIFA (FUNKSIONAL MODULLAR)
+--------------------------------------------------------------------------------
+
+1-MODUL: ARXITEKTURA VA KIRISH (GUEST MODE)
+1.1. MEHMON REJIMI:
+• Ilova yuklanganda Splash Screen’dan so‘ng darhol Asosiy Lenta (Home) ochiladi.
+• Login so'ralmaydi. User bemalol aylanishi mumkin.
+
+1.2. TRIGGER (LOGIN QACHON SO'RALADI?):
+• Tizim faqat quyidagi tugmalar bosilganda Ro‘yxatdan o‘tishni (Modal Oyna) so‘raydi:
+   1. "Sotib olish" yoki "Savatga qo'shish".
+   2. "Chat" (Sotuvchiga yozish).
+   3. "E’lon berish" (+).
+
+1.3. AVTORIZATSIYA:
+• Usul: Faqat Telefon raqam (SMS). (Telegram keyingi versiyada).
+• Profil: Muvaffaqiyatli kirgandan so‘ng Ism va Viloyat so‘raladi.
+
+--------------------------------------------------------------------------------
+2-MODUL: INTERFEYS VA NAVIGATSIYA
+2.1. SAHIFALASH (PAGINATION):
+• Lenta "Cheksiz skroll" bo‘lmaydi (Server yuklamasini kamaytirish uchun).
+• Har bir sahifada 20 ta e’lon.
+• Pastda navigatsiya: [< Oldingi] [Keyingi >].
+
+2.2. RESPONSIVE UI:
+• Mobil: Bottom Navigation Bar.
+• Web/Tablet: Grid View (Kengaytirilgan ko'rinish).
+
+--------------------------------------------------------------------------------
+3-MODUL: E’LON BERISH (BIRD MANAGEMENT)
+3.1. JARAYON (2 BOSQICH):
+• 1-Bosqich (Majburiy):
+   - Rasm (Min 1, Max 5).
+   - Video (Max 15 sek).
+   - Ma’lumotlar: Kategoriya, Zot, Narx, Ta’rif, Viloyat.
+• 2-Bosqich (Ishonch / PRO):
+   - Pasport: Qush hujjati rasmini yuklash.
+   - Vet-Ko‘rik: Videoni Veterinarga yuborish (Pullik xizmat bo'lishi mumkin).
+
+3.2. MEDIA OPTIMIZATSIYA (TEXNIK):
+• Foydalanuvchi yuklagan video serverga tushishi bilan FFMPEG orqali siqilishi (Compress) shart.
+
+3.3. AUTO-PUBLISH:
+• E’lonlar "Post-moderatsiya" rejimida ishlaydi (Darhol chiqadi, Admin keyin tekshiradi).
+
+--------------------------------------------------------------------------------
+4-MODUL: VETERINAR NAZORATI
+4.1. VET-KABINET:
+• Veterinarga kelib tushgan videolar ro‘yxati.
+• Harakat:
+   1. TASDIQLASH (Yashil): "Qush vizual sog‘lom".
+   2. RAD ETISH (Qizil): Sabab yoziladi.
+
+4.2. E’LONDA AKS ETISHI:
+• Tasdiqlansa: E’londa "✅ VETERINAR TEKSHIRGAN" belgisi chiqadi.
+
+--------------------------------------------------------------------------------
+5-MODUL: MARKETPLACE VA FILTRLAR
+5.1. VIP FILTR (SWITCH):
+• Qidiruv panelida "Faqat Hujjatli va Tekshirilgan" tugmasi bo‘ladi.
+• Bu tugma bosilsa, oddiy qushlar yashirinadi.
+
+5.2. QIDIRUV:
+• Viloyat, Narx, Zot bo‘yicha.
+
+--------------------------------------------------------------------------------
+6-MODUL: MOLIYA VA XAVFSIZ BITIM (ESCROW)
+6.1. HOLD (MUZLATISH):
+• Xaridor to‘lov qilganda (Payme/Click Mock), pul Admin hisobida muzlatiladi.
+6.2. YAKUNLASH:
+• Qush yetib borgach, Xaridor "QABUL QILDIM" tugmasini bosadi -> Pul sotuvchiga o‘tadi.
+6.3. NIZO (DISPUTE):
+• "MUAMMO BOR" bosilsa -> Pul muzlatiladi -> Admin chatga qo‘shiladi.
+
+--------------------------------------------------------------------------------
+7-MODUL: OFFICIAL SHOP (ADMIN DO‘KONI)
+7.1. KONSEPSIYA:
+• Bu modulda Admin (Siz) Yem, Dori va Qafas sotasiz.
+• Bu yerdagi to'lovlar Muzlatilmaydi, to'g'ridan-to'g'ri tushadi.
+
+7.2. FUNKSIYALAR:
+• Mahsulotlar katalogi.
+• Savatcha (Cart).
+• Buyurtma berish.
+
+--------------------------------------------------------------------------------
+8-MODUL: LOGISTIKA
+8.1. BOZOR UCHUN (USER-TO-USER):
+• Chat-Logistika: Narx va usul Chatda kelishiladi. Xarita shart emas.
+• Sotuvchi: "Mashina raqami va Tel"ni chatga yozadi.
+
+8.2. OFFICIAL SHOP UCHUN (ADMIN-TO-USER):
+• Statuslar: "Yangi" -> "Qadoqlanmoqda" -> "Kuryerda" -> "Yetkazildi".
+
+--------------------------------------------------------------------------------
+9-MODUL: CHAT & OGOHLANTIRISH
+9.1. CHEKLOVLAR:
+• Faqat matn, rasm, ovoz.
+• Chatda "karta", "payme" so'zlari yozilsa -> Robot ogohlantiradi: "To'lovni ilova ichida qiling!".
+
+--------------------------------------------------------------------------------
+10-MODUL: VIRAL SHARE (MARKETING)
+10.1. SMART SHARE:
+• "Share" tugmasi bosilganda, Telegram uchun maxsus rasm (Qush + Narx + Link) generatsiya qilinadi.
+
+--------------------------------------------------------------------------------
+11-MODUL: ADMIN PANEL
+11.1. DASHBOARD:
+• Statistika, Muzlatilgan pullar.
+11.2. VERIFIKATSIYA:
+• Vetlarni va Hujjatlarni tasdiqlash.
+11.3. DO'KON BOSHQARUVI:
+• Ombor qoldig'i va Buyurtmalar.
+
+================================================================================
+HUJJAT YAKUNI.
+================================================================================

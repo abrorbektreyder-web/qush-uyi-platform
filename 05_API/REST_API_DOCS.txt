@@ -1,0 +1,215 @@
+================================================================================
+PROJECT: QUSHLI PLATFORMASI
+DOC TYPE: REST API SPECIFICATION (v1.0)
+BASE URL: https://api.qushli.uz/v1
+AUTH: Bearer Token (JWT)
+================================================================================
+
+--------------------------------------------------------------------------------
+1. AUTHENTICATION (KIRISH - TELEFON ORQALI)
+--------------------------------------------------------------------------------
+
+### 1.1 Telefon orqali kirish (SMS so‘rash)
+POST /auth/login
+Summary: Telefon raqamga OTP kod yuborish.
+Body (JSON):
+{ 
+  "phone": "+998901234567" 
+}
+Response (200 OK):
+{ 
+  "message": "SMS sent", 
+  "otp_hash": "xyz..." 
+}
+
+### 1.2 Telefonni tasdiqlash (Verify)
+POST /auth/verify
+Summary: Kelgan SMS kodni tekshirish va kirish.
+Body (JSON):
+{ 
+  "phone": "+998901234567", 
+  "code": "1122", 
+  "otp_hash": "xyz..." 
+}
+Response (200 OK):
+{
+  "access_token": "eyJhbGciOiJIUz...",
+  "user": {
+    "id": "uuid-1234-5678...",
+    "role": "user",
+    "is_new_user": false // Agar true bo'lsa -> Profil to'ldirish oynasi ochiladi
+  }
+}
+
+### 1.3 Profilni to'ldirish (Yangi userlar uchun)
+POST /auth/register-details
+Header: Authorization: Bearer {token}
+Body (JSON):
+{ 
+  "full_name": "Abror", 
+  "region_id": 1 
+}
+Response (200 OK):
+{ 
+  "status": "profile_updated",
+  "user": { ... }
+}
+
+--------------------------------------------------------------------------------
+2. BIRDS & MARKETPLACE (QUSHLAR BOZORI)
+--------------------------------------------------------------------------------
+
+### 2.1 Yangi E'lon Qo‘shish
+POST /birds
+Header: Authorization: Bearer {token}
+Body (Multipart/Form-Data):
+{
+  "category_id": 1,
+  "region_id": 10,  // Andijon
+  "species": "Sayroqi Kanareyka",
+  "price": 500000,
+  "price_type": "fixed", // fixed, negotiable
+  "description": "Juda zo'r sayraydi, 1 yosh.",
+  "delivery_options": {"pickup": true, "taxi": true},
+  "files": [image1.jpg, image2.jpg, video.mp4, voice_note.mp3]
+}
+Response (201 Created):
+{
+  "id": "bird_uuid_123",
+  "status": "active",
+  "share_link": "https://qushli.uz/b/123" // Telegram uchun
+}
+
+### 2.2 Asosiy Lenta (Feed)
+GET /birds/feed
+Query Params:
+  ?region_id=10
+  ?category_id=2
+  ?min_price=100000
+  ?sort=newest // expensive, cheap, popular
+Response (200 OK):
+[
+  {
+    "id": "bird_uuid_123",
+    "title": "Sayroqi Kanareyka",
+    "price": "500 000 UZS",
+    "image_url": "https://cdn.../img1.jpg",
+    "has_voice_note": true, // "Play" tugmasi uchun
+    "is_premium": true
+  },
+  ...
+]
+
+### 2.3 Qush haqida to‘liq ma'lumot
+GET /birds/{id}
+Response:
+{
+  "id": "bird_uuid_123",
+  "owner": { "name": "Ali", "rating": 4.8, "phone": "+998..." },
+  "media": [
+     { "type": "image", "url": "..." },
+     { "type": "audio", "url": "..." } // Ovozli xabar
+  ],
+  "health_passport": {
+     "status": "verified",
+     "vet_name": "Dr. Sobir",
+     "qr_code": "https://..."
+  },
+  "logistics": { "taxi_available": true }
+}
+
+--------------------------------------------------------------------------------
+3. ORDERS & ESCROW (XAVFSIZ BITIM)
+--------------------------------------------------------------------------------
+
+### 3.1 Bitim yaratish (Sotib olish)
+POST /orders
+Body:
+{
+  "bird_id": "bird_uuid_123",
+  "delivery_method": "taxi" // yoki 'pickup'
+}
+Response (201 Created):
+{
+  "order_id": "order_uuid_999",
+  "amount_to_pay": 550000, // Qush + Dostavka
+  "status": "created"
+}
+
+### 3.2 To‘lov qilish (Payme/Click Mock)
+POST /orders/{id}/pay
+Body: { "payment_provider": "payme" }
+Response:
+{
+  "status": "paid_escrow",
+  "message": "Pul muzlatildi. Sotuvchiga xabar berildi."
+}
+
+### 3.3 Sotuvchi: Yubordim (Ship)
+POST /orders/{id}/ship
+Body:
+{
+  "driver_name": "Vali",
+  "driver_phone": "+99890...",
+  "car_number": "80 A 777 AA"
+}
+Response: { "status": "delivery_started" }
+
+### 3.4 Xaridor: Qabul qildim (Release Money)
+POST /orders/{id}/confirm
+Response:
+{
+  "status": "completed",
+  "message": "Bitim yopildi. Pul sotuvchiga o'tkazildi."
+}
+
+--------------------------------------------------------------------------------
+4. CHAT & MESSAGING
+--------------------------------------------------------------------------------
+
+### 4.1 Chat yaratish (yoki borini olish)
+POST /chats
+Body: { "bird_id": "bird_uuid_123" }
+Response: { "room_id": "room_uuid_555" }
+
+### 4.2 Xabarlarni olish
+GET /chats/{room_id}/messages
+Query: ?limit=50&offset=0
+Response:
+[
+  {
+    "sender_id": "user_1",
+    "content": "Qush sog'lommi?",
+    "created_at": "2023-10-10T12:00:00Z"
+  }
+]
+
+### 4.3 Xabar yozish
+POST /chats/{room_id}/messages
+Body: { "content": "Ha, juda zo'r." }
+
+--------------------------------------------------------------------------------
+5. REFERENCE DATA (MA'LUMOTNOMALAR)
+--------------------------------------------------------------------------------
+
+### 5.1 Viloyatlar ro‘yxati
+GET /regions
+Response:
+[ {"id": 1, "name": "Toshkent"}, {"id": 2, "name": "Andijon"}... ]
+
+### 5.2 Kategoriyalar
+GET /categories
+Response:
+[ {"id": 1, "name": "To'ti", "slug": "parrot"}, ... ]
+
+
+💡 MUHIM ESLATMALAR:
+Media Upload: Men Multipart/Form-Data ishlatdim. Bu rasm, video va ovozni bitta zaprosda yuklash uchun eng qulay yo‘l.
+
+Telegram Share: POST /birds javobida share_link qaytaryapman. Frontendchi bu linkni olib, Telegramga "Share" tugmasini yasaydi.
+
+Audio: GET /birds/{id} da type: "audio" keladi. Frontendchi buni ko‘rganda, rasm emas, Audio Player chizishi kerak.
+
+================================================================================
+END OF API SPECS
+================================================================================

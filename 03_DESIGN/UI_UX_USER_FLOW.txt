@@ -1,0 +1,135 @@
+================================================================================
+PROJECT: QUSHLI PLATFORMASI
+DOC TYPE: UI/UX SCREEN FLOW (USER JOURNEY)
+DEVICE: MOBILE (iOS / Android)
+================================================================================
+
+--------------------------------------------------------------------------------
+FLOW 1: ONBOARDING & GUEST MODE (MEHMON REJIMI)
+--------------------------------------------------------------------------------
+Maqsad: Foydalanuvchini darhol ilova ichiga kiritish. Login faqat harakat (Action) qilinganda so‘raladi.
+
+SCREEN 1.0: SPLASH SCREEN (Yuklanish)
+  - UI: Logo + Slogan ("O‘zbekistonning №1 Qush bozori").
+  - Action: 2 soniyadan keyin avtomatik -> SCREEN 2.0 (HOME FEED) ga o‘tadi.
+
+SCREEN 1.1: AUTH MODAL (KIRISH OYNASI)
+  - QACHON CHIQADI? (Trigger):
+    1. Foydalanuvchi "E'lon berish" tugmasini bosganda.
+    2. "Xavfsiz Sotib Olish" yoki "Chat" tugmasini bosganda.
+    3. "Profil" menyusiga kirganda.
+
+  - UI (POP-UP):
+    1. Sarlavha: "Davom etish uchun tizimga kiring".
+    2. Input: [+998 __ ___ __ __] (Telefon raqam).
+    3. Tugma: [Kod olish].
+
+  - ACTION:
+    -> [Kod olish] bosilsa -> SMS yuboriladi -> SMS kiritish maydoni ochiladi.
+    -> Kod to'g'ri bo'lsa:
+       - Agar yangi user bo'lsa -> SCREEN 1.2 (PROFILE SETUP).
+       - Agar eski user bo'lsa -> Avtomatik kiradi va bosgan tugmasi bo'yicha ishi davom etadi.
+
+SCREEN 1.2: PROFILE SETUP (Faqat yangilar uchun)
+  - UI:
+    1. Ismingiz.
+    2. Hudud tanlash (Dropdown: "Andijon", "Toshkent"...) - Muhim.
+    3. Rol tanlash: [🟢 Xaridorman] | [🔴 Sotuvchiman].
+  - ACTION:
+    -> [Saqlash] -> Foydalanuvchi to'xtagan joyiga qaytadi.
+
+--------------------------------------------------------------------------------
+FLOW 2: BUYER JOURNEY (XARIDOR OQIMI)
+--------------------------------------------------------------------------------
+Maqsad: Qushni topish, Ovozini eshitish va Xavfsiz sotib olish.
+
+SCREEN 2.0: HOME FEED (Bosh Sahifa - Mehmonlarga ochiq)
+  - UI:
+    1. Stories Bar (Tepada): Premium e'lonlar (Video format).
+    2. Search & Filter: [🔍 Qidirish] [Filter: Hudud, Narx, Zot].
+    3. Feed (Lenta): Katta rasmli kartochkalar.
+       - Element: Rasm, Narx, Zot, Hudud.
+       - Element: [▶️ Play Audio] (Qush sayrashini eshitish).
+    4. Bottom Bar: [🏠 Home] [➕ E'lon] [👤 Profil].
+  - ACTION:
+    -> [Kartochka] ustiga bosilsa -> O‘tadi: SCREEN 2.1 (DETAIL).
+    -> [E'lon] yoki [Profil] bosilsa -> Agar kirmagan bo'lsa -> SCREEN 1.1.
+
+SCREEN 2.1: BIRD DETAIL (Qush Pasporti)
+  - UI:
+    1. Media Gallery: Rasm/Video slayd.
+    2. Info: Narx, Zot, Yosh, Jins.
+    3. Trust Badge: "Vet Tasdiqlagan" ✅ yoki "QR Pasport" 🎫.
+    4. Seller Info: Sotuvchi reytingi, joylashuvi.
+  - FOOTER ACTIONS:
+    1. [💬 Chat]
+    2. [📞 Tel qilish]
+    3. [🚀 Telegramga ulashish] (Smart Share)
+    4. [💰 Xavfsiz Sotib Olish] (Primary Button)
+  - ACTION:
+    -> [Xavfsiz Sotib Olish] yoki [Chat] bosilsa:
+       - Login qilgan bo'lsa -> SCREEN 2.2 yoki 4.0.
+       - Login qilmagan bo'lsa -> SCREEN 1.1 (Auth Modal).
+
+SCREEN 2.2: CHECKOUT & ESCROW (To‘lov)
+  - UI:
+    1. Yetkazib berish turi:
+       [🚗 Pitak/Taksi] (+50,000 so'm) | [🏃 Olib ketish] (0 so'm)
+    2. To‘lov turi:
+       [💳 Payme/Click] | [🤝 Joyida naqd] (Faqat "Olib ketish" uchun)
+    3. Jami summa: Qush narxi + Yetkazib berish + Komissiya.
+  - ACTION:
+    -> [To‘lash] bosilsa -> Payme ilovasiga o‘tadi -> Qaytadi -> SCREEN 2.3.
+
+SCREEN 2.3: ORDER SUCCESS
+  - UI: "Tabriklaymiz! Pul himoyalandi. Sotuvchi tasdiqlashini kuting."
+  - ACTION:
+    -> [Buyurtmani kuzatish] -> O‘tadi: SCREEN 4.1 (ORDER STATUS).
+
+--------------------------------------------------------------------------------
+FLOW 3: SELLER JOURNEY (SOTUVCHI OQIMI)
+--------------------------------------------------------------------------------
+Maqsad: Tez e'lon berish va uni Telegramda tarqatish.
+
+SCREEN 3.0: ADD LISTING (Agar login qilmagan bo'lsa -> Screen 1.1 chiqadi)
+  - STEP 1: MEDIA
+    - [📸 Rasm yuklash] (Galereya/Kamera).
+    - [🎤 Ovoz yozish] (Mikrofon tugmasi - Sayrashini yozish).
+  - STEP 2: INFO
+    - Kategoriya tanlash, Zot, Yosh.
+    - Narx (Fixed yoki "Kelishiladi").
+  - STEP 3: LOGISTIKA
+    - "Boshqa viloyatga yubora olasizmi?" -> [Ha/Yo‘q].
+  - ACTION:
+    -> [E'lonni joylash] -> O‘tadi: SCREEN 3.1 (SUCCESS).
+
+SCREEN 3.1: VIRAL SHARE (Marketing)
+  - UI: "E'lon joylandi! Endi xaridor topishni tezlashtiring."
+  - BIG BUTTON:
+    [🚀 Telegram Guruhlarga Tarqatish]
+  - LOGIC: Bu tugma bosilsa, tayyor chiroyli post + ssilka generatsiya qilinadi.
+
+--------------------------------------------------------------------------------
+FLOW 4: COMMUNICATION & STATUS (MULOQOT)
+--------------------------------------------------------------------------------
+
+SCREEN 4.0: CHAT ROOM
+  - UI:
+    - Tepada: Qushning kichik rasmi va narxi.
+    - O‘rtada: Xabarlar.
+    - Tizim Xabarlari: "Xaridor to‘lov qildi", "Qush yo‘lga chiqdi".
+  - ACTION:
+    - Sotuvchi uchun tugma: [🚖 Yubordim] (Rasm/Video yuklash).
+    - Xaridor uchun tugma: [✅ Qabul qildim] (Pulni yechish).
+
+SCREEN 4.1: ORDER STATUS (Kuzatuv)
+  - UI: Timeline (Vaqt o‘qi).
+    1. ⏳ To‘lov qilindi (Muzlatildi).
+    2. 📦 Sotuvchi yubordi (Haydovchi: 80 A777AA).
+    3. ✅ Yetib keldi.
+  - ACTION:
+    -> [Dispute / Muammo bor] -> Admin bilan bog‘lanish.
+
+--------------------------------------------------------------------------------
+END OF FLOW
+================================================================================

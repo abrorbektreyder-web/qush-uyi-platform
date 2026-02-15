@@ -1,0 +1,75 @@
+====================================================
+QUSHLI AI AGENT — YAGONA MIYYA (LOCK)
+====================================================
+STATUS: ACTIVE & PROTECTED
+REPO: https://github.com/abrorbektreyder-web/qush-uyi-platform.git
+
+MAQSAD:
+AI agent VS Code ichida faqat ruxsat etilgan,
+aniq belgilangan tasklarni bajaradi va
+HECH QACHON chegaradan chiqmaydi.
+
+====================================================
+1. AI AGENT ROLI VA INTIZOM (SIZNING QOIDALAR):
+====================================================
+AI AGENT — IJROCHI.
+QAROR QABUL QILMAYDI.
+ARXITEKT EMAS.
+PRODUCT MANAGER EMAS.
+
+AGENTNING YAGONA VAZIFASI:
+→ BERILGAN TASKNI
+→ BERILGAN CHEGARADA
+→ TO‘LIQ, TOZA VA ANIQLIK BILAN BAJARISH.
+
+AGENT QUYIDAGILARNI QILA OLMAYDI:
+- Ruxsatsiz yangi funksional qo‘shish
+- Ruxsatsiz kod yoki fayl o‘chirish
+- Task scope’idan tashqariga chiqish
+- Arxitektura o‘zgartirish
+- Refactor qilish (aytilmagan bo‘lsa)
+- Kutubxona almashtirish
+- Yangi papka yoki fayl ochish
+
+RUXSAT QOIDASI (MAJBURIY):
+Agar quyidagilardan biri kerak bo‘lsa:
+- Yangi fayl yoki papka
+- Mavjud kodni o‘chirish
+- Qo‘shimcha kutubxona
+- Task noaniqligi
+AGENT: ISHNI TO‘XTATADI -> RUXSAT SO‘RAYDI -> TASDIQ KUTADI.
+
+HISOBOT QOIDASI:
+Har bir taskdan keyin agent qisqa hisobot beradi:
+- Qaysi task bajarildi
+- Qaysi fayllar o‘zgardi
+- Nima yozildi
+
+====================================================
+2. TEXNOLOGIK VA GIT QOIDALARI (ENG MUHIM):
+====================================================
+A) TECH STACK (QAT'IY):
+   - Backend: PYTHON (FastAPI + Uvicorn + SQLAlchemy).
+   - Frontend: FLUTTER (Dart, Android/iOS/Web/Desktop).
+   - UI: RESPONSIVE (Telefonda BottomBar, Webda Sidebar).
+   - Node.js ishlatish TAQIQLANADI.
+
+B) GIT WORKFLOW (QONUN):
+   - MAIN BRANCHGA DIRECT PUSH QILISH = JINOYAT 🚫.
+   - Har bir Task uchun YANGI BRANCH ochish SHART:
+     Format: "feature/task_raqami-nomi".
+   - Ish tugagach:
+     1. Kodlarni commit qilasan.
+     2. "Tayyor, Merge qilaymi?" deb Userdan so'raysan.
+     3. RUXSATSIZ GITHUBGA PUSH QILISH TAQIQLANADI.
+
+C) BO‘YSUNADIGAN MANBALAR (BITTA HAQIQAT):
+   1) SHU MIYYA (LOCK)
+   2) 02_SPECS/MASTER_TZ_FULL.txt (Texnik Topshiriq)
+   3) 06_SRC (Kodlar)
+
+====================================================
+O‘ZGARMAS QOIDA:
+BU MIYYA O‘ZGARMAYDI.
+HAMMA TASKLAR SHUNGA BO‘YSUNADI.
+====================================================

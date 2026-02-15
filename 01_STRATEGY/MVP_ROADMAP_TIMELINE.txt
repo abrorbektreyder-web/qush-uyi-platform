@@ -1,0 +1,75 @@
+================================================================================
+PROJECT:  QUSHLI PLATFORMASI
+DOCUMENT: VISION 2.0 & TIMELINE (RIVOJLANISH MUDDATLARI)
+STATUS:   STRATEGIC PLAN
+START:    MVP ISHGA TUSHGAN KUNDAN BOSHLAB HISOBLANADI (T = 0)
+================================================================================
+
+1. BOSQICH: SIFAT NAZORATI VA TIBBIYOT (MUDDAT: 3-6 OY)
+--------------------------------------------------------------------------------
+MAQSAD: Dastlabki 3 oyda foydalanuvchi yig'iladi. 4-oydan boshlab "musor"
+        e'lonlarni tozalash va sifatni oshirish boshlanadi.
+
+[cite_start][1.1] "QIZIL KITOB" FILTRI (ECO-CONTROL) [cite: 1]
+      - MUDDAT: MVP dan 3 oy o'tib.
+      - SABAB:  Foydalanuvchi ko'payganda brakonerlar ham paydo bo'ladi.
+                Huquqiy muammolarni oldini olish uchun bu 1-o'rinda.
+      - ACTION: AI modelini o'rgatish va ishga tushirish.
+
+[cite_start][1.2] RAQAMLI TIBBIY KARTA (DIGITAL HEALTH RECORD) [cite: 4]
+      - MUDDAT: MVP dan 4-5 oy o'tib.
+      - SABAB:  Bu vaqtga kelib platformada 10-20 ta faol Veterinarlar
+                paydo bo'ladi. Tizim ishlashi uchun "Doktorlar bazasi" kerak.
+      - ACTION: Veterinarlar uchun alohida Admin panel ochish.
+
+[cite_start][1.3] SOS VETERINARIYA CHAQIRUVI (EMERGENCY) [cite: 4]
+      - MUDDAT: MVP dan 6 oy o'tib.
+      - SABAB:  Geolokatsiya xizmati va userlar soni yetarli bo'lganda
+                ishlaydi. Boshida chaqiruvga boradigan doktor topilmasligi mumkin.
+
+================================================================================
+
+2. BOSQICH: PREMIUM EKOTIZIM VA XAVFSIZLIK (MUDDAT: 6-9 OY)
+--------------------------------------------------------------------------------
+MAQSAD: Odamlar ilovaga o'rgandi. Endi "Premium" funksiyalar orqali
+        daromadni oshirish va elita qatlamni jalb qilish.
+
+[cite_start][2.1] O'ZGARMAS TARIX (IMMUTABLE HISTORY) [cite: 3]
+      - MUDDAT: MVP dan 7 oy o'tib.
+      - SABAB:  6 oylik ma'lumotlar bazasi yig'ilgandan keyin, bu tarixni
+                "Qush Pasporti"da ko'rsatish mantiqli bo'ladi.
+
+[cite_start][2.2] ONLAYN AUKSION (REAL-TIME BIDDING) [cite: 8]
+      - MUDDAT: MVP dan 8 oy o'tib.
+      - SABAB:  Auksion qizishi uchun kamida 50k+ faol foydalanuvchi kerak.
+                Ertaroq qo'shilsa, ishtirokchi bo'lmaydi va auksion "o'ladi".
+
+[cite_start][2.3] CHIP ID VA RING ID (IDENTIFIKATSIYA) [cite: 1]
+      - MUDDAT: MVP dan 9 oy o'tib.
+      - SABAB:  Bu foydalanuvchilar uchun "qiyinchilik". Buni faqat ilova
+                o'ta ommalashib ketgandan keyingina majburiy qilish mumkin.
+                Boshida qo'shilsa, userlar qochib ketadi.
+
+================================================================================
+
+3. BOSQICH: LOGISTIKA VA SUPER APP (MUDDAT: 12+ OY)
+--------------------------------------------------------------------------------
+MAQSAD: Qush bozorining "Amazon"iga aylanish va servisni mukammallashtirish.
+
+[cite_start][3.1] PROFESSIONAL YETKAZIB BERISH (PET TAXI) [cite: 2]
+      - MUDDAT: MVP dan 12 oy o'tib (1 yil).
+      - SABAB:  Logistika kompaniyasi yoki taksi parklari bilan rasmiy
+                shartnoma qilish va haydovchilarni o'qitish vaqt talab qiladi.
+
+[cite_start][3.2] SOFT-ESCROW ARBITRAJ (ADVANCED DISPUTE) [cite: 5]
+      - MUDDAT: MVP dan 12+ oy o'tib.
+      - SABAB:  Kuniga 100+ savdo bo'lishni boshlaganda, nizolar ko'payadi.
+                Shunda sun'iy intellekt (AI) va ekspertlar guruhi kerak bo'ladi.
+
+================================================================================
+STRATEGIK REJA XULOSASI:
+- 0-3 OY:   Faqat Odam yig'ish (Telegram Bridge & Oddiy E'lon).
+- 3-6 OY:   Tozalash va Tartibga solish (Vet & Eco Filter).
+- 6-12 OY:  Monetizatsiya va Premium (Auksion & Chip ID).
+- 1 YIL+:   Infratuzilma (Logistika & Global Bozor).
+================================================================================
