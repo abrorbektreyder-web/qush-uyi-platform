@@ -366,51 +366,56 @@ class _AddListingPageState extends State<AddListingPage> {
     Widget build(BuildContext context) {
         return Scaffold(
             appBar: AppBar(title: const Text("Yangi E'lon")),
-            body: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                    children: [
-                        DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(labelText: "Kategoriya", border: OutlineInputBorder()),
-                            value: _selectedCategory,
-                            items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                            onChanged: (v) => setState(() => _selectedCategory = v),
+            body: Center(
+                child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                                DropdownButtonFormField<String>(
+                                    decoration: const InputDecoration(labelText: "Kategoriya", border: OutlineInputBorder()),
+                                    value: _selectedCategory,
+                                    items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                                    onChanged: (v) => setState(() => _selectedCategory = v),
+                                ),
+                                const SizedBox(height: 16),
+                                const TextField(
+                                    decoration: InputDecoration(labelText: "Paroda (Zoti)", border: OutlineInputBorder()),
+                                ),
+                                const SizedBox(height: 16),
+                                const TextField(
+                                    decoration: InputDecoration(labelText: "Narx (UZS)", border: OutlineInputBorder(), suffixText: "UZS"),
+                                    keyboardType: TextInputType.number,
+                                ),
+                                const SizedBox(height: 16),
+                                const TextField(
+                                    decoration: InputDecoration(labelText: "Batafsil ma'lumot", border: OutlineInputBorder()),
+                                    maxLines: 4,
+                                ),
+                                 const SizedBox(height: 16),
+                                DropdownButtonFormField<String>(
+                                    decoration: const InputDecoration(labelText: "Sizning Hududingiz (Info uchun)", border: OutlineInputBorder()),
+                                    value: _selectedRegion,
+                                    items: _regions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                                    onChanged: (v) => setState(() => _selectedRegion = v),
+                                ),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                    height: 50,
+                                    child: ElevatedButton(
+                                        onPressed: () {
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("E'lon joylandi!")));
+                                        },
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                        child: const Text("E'LONNI JOYLASHTIRISH"),
+                                    ),
+                                )
+                            ],
                         ),
-                        const SizedBox(height: 16),
-                        const TextField(
-                            decoration: InputDecoration(labelText: "Paroda (Zoti)", border: OutlineInputBorder()),
-                        ),
-                        const SizedBox(height: 16),
-                        const TextField(
-                            decoration: InputDecoration(labelText: "Narx (UZS)", border: OutlineInputBorder(), suffixText: "UZS"),
-                            keyboardType: TextInputType.number,
-                        ),
-                        const SizedBox(height: 16),
-                        const TextField(
-                            decoration: InputDecoration(labelText: "Batafsil ma'lumot", border: OutlineInputBorder()),
-                            maxLines: 4,
-                        ),
-                         const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(labelText: "Sizning Hududingiz (Info uchun)", border: OutlineInputBorder()),
-                            value: _selectedRegion,
-                            items: _regions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                            onChanged: (v) => setState(() => _selectedRegion = v),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                                onPressed: () {
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("E'lon joylandi!")));
-                                },
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                                child: const Text("E'LONNI JOYLASHTIRISH"),
-                            ),
-                        )
-                    ],
+                    ),
                 ),
             ),
         );
