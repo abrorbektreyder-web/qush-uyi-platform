@@ -9,3 +9,4 @@ websockets
 python-jose[cryptography]
 passlib[bcrypt]
 httpx
+python-dotenv
