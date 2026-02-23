@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -67,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                   _buildDivider(),
                   _buildListTile(
                       Icons.storefront, "Mening buyurtmalarim (Shop)",
-                      onTap: () {}),
+                      onTap: () => context.push('/shop')),
                   _buildDivider(),
                   _buildListTile(
                       Icons.verified_user_outlined, "Verifikatsiya markazi",

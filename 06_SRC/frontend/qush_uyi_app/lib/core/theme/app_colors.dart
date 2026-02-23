@@ -5,6 +5,7 @@ class AppColors {
   static const Color primary =
       Color(0xFF00FF87); // Vibrant Neon Green for action
   static const Color primaryDark = Color(0xFF00C969);
+  static const Color primaryLight = Color(0xFF80FFC3);
 
   static const Color background = Color(0xFF0B0D17); // Deep dark blue/black
   static const Color surface = Color(0xFF151828); // Elevated deep dark

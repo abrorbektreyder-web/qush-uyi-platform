@@ -6,6 +6,7 @@ import '../../features/home/presentation/bird_detail_screen.dart';
 import '../../features/home/data/bird_model.dart';
 import '../../features/add_listing/presentation/add_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/shop/presentation/shop_screen.dart';
 
 class CustomAnimatedPage extends CustomTransitionPage {
   CustomAnimatedPage({required Widget child})
@@ -90,6 +91,11 @@ final GoRouter appRouter = GoRouter(
             final bird = state.extra as BirdModel;
             return CustomAnimatedPage(child: BirdDetailScreen(bird: bird));
           },
+        ),
+        GoRoute(
+          path: '/shop',
+          pageBuilder: (context, state) =>
+              CustomAnimatedPage(child: const ShopScreen()),
         ),
         GoRoute(
           path: '/add',
