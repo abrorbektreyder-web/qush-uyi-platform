@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   return Dio(BaseOptions(
-      baseUrl: 'https://qush-uyi-platform-production.up.railway.app'));
+      baseUrl: 'https://qush-uyi-platform-production-0146.up.railway.app'));
 });
 
 final ordersProvider =

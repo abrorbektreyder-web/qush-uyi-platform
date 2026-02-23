@@ -176,7 +176,7 @@ class _OrderCard extends ConsumerWidget {
                   image: order.imageUrl.isNotEmpty
                       ? DecorationImage(
                           image: NetworkImage(
-                              'https://qush-uyi-platform-production.up.railway.app${order.imageUrl}'),
+                              'https://qush-uyi-platform-production-0146.up.railway.app${order.imageUrl}'),
                           fit: BoxFit.cover)
                       : null,
                 ),

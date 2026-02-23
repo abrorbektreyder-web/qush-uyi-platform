@@ -58,7 +58,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
   @override
   Widget build(BuildContext context) {
     String imageUrl = widget.bird.media.isNotEmpty
-        ? 'https://qush-uyi-platform-production.up.railway.app${widget.bird.media.first.url}'
+        ? 'https://qush-uyi-platform-production-0146.up.railway.app${widget.bird.media.first.url}'
         : '';
     final formattedPrice = '${widget.bird.price.toInt()} UZS'
         .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ' ');
