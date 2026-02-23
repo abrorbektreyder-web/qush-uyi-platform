@@ -87,3 +87,6 @@ class ChatMessageCreate(BaseModel):
     room_id: str
     content: str
     message_type: str = "text"
+
+class DisputeRequest(BaseModel):
+    reason: str

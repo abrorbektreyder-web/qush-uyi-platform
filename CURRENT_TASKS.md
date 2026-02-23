@@ -32,9 +32,10 @@
 - [x] 6.4. Privacy Settings: Telefon va Telegram switcherlari.
 - [x] 6.5. Communication UI: E'lon sahifasida "Call" va "Telegram" tugmalari.
 
-### 🟡 7. LOGISTIKA (DELIVERY)
-- [ ] 7.1. Buyurtma statuslari (New -> Delivered).
-- [ ] 7.2. Kuryer biriktirish funksiyasi.
+### 🟡 7. 🤝 BUYURTMA STATUSI VA NIZO (ESCROW DISPUTE)
+- [ ] 7.1. "Mening Buyurtmalarim" sahifasini yaratish.
+- [ ] 7.2. Tovar yetib borganda "Qabul qildim" bosish va pulni sotuvchiga tushirish.
+- [ ] 7.3. "Muammo bor" bosish orqali adminga bot orqali shikoyat yuborish.
 
 ### 🔵 8. CHAT SYSTEM (ALOQA)
 - [x] 8.1. Real-time chat (Websockets).

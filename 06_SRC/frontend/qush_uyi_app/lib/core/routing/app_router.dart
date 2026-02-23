@@ -8,6 +8,7 @@ import '../../features/add_listing/presentation/add_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/profile/presentation/settings_screen.dart';
 import '../../features/shop/presentation/shop_screen.dart';
+import '../../features/profile/presentation/orders_screen.dart';
 
 class CustomAnimatedPage extends CustomTransitionPage {
   CustomAnimatedPage({required Widget child})
@@ -112,6 +113,11 @@ final GoRouter appRouter = GoRouter(
           path: '/profile/settings',
           pageBuilder: (context, state) =>
               CustomAnimatedPage(child: const SettingsScreen()),
+        ),
+        GoRoute(
+          path: '/orders',
+          pageBuilder: (context, state) =>
+              CustomAnimatedPage(child: const OrdersScreen()),
         ),
       ],
     ),

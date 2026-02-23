@@ -67,6 +67,10 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () {}),
                   _buildDivider(),
                   _buildListTile(
+                      Icons.shopping_bag_outlined, "Mening xaridlarim (Escrow)",
+                      onTap: () => context.push('/orders')),
+                  _buildDivider(),
+                  _buildListTile(
                       Icons.storefront, "Mening buyurtmalarim (Shop)",
                       onTap: () => context.push('/shop')),
                   _buildDivider(),

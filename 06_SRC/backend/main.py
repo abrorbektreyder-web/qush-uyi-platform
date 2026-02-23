@@ -354,6 +354,66 @@ async def process_refund(transaction_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success", "message": "Pul qaytarildi."}
 
+@app.get("/user/orders/{user_id}")
+async def get_user_orders(user_id: str, db: Session = Depends(get_db)):
+    orders = db.query(models.Order).filter_by(buyer_id=user_id).order_by(models.Order.created_at.desc()).all()
+    results = []
+    for order in orders:
+        bird = db.query(models.Bird).filter_by(id=order.bird_id).first()
+        media_urls = [{"type": m.media_type, "url": m.file_url} for m in bird.media] if bird else []
+        results.append({
+            "order_id": order.id,
+            "bird_id": order.bird_id,
+            "species": bird.species if bird else "Noma'lum",
+            "price": order.total_amount,
+            "status": order.escrow_status,
+            "created_at": str(order.created_at),
+            "media": media_urls
+        })
+    return {"orders": results}
+
+@app.post("/pay/release/{order_id}")
+async def release_fund(order_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    order = db.query(models.Order).filter_by(id=order_id).first()
+    if not order or order.escrow_status != "payment_held":
+        raise HTTPException(400, "Order is not in held status")
+        
+    order.escrow_status = "completed"
+    
+    tx = db.query(models.Transaction).filter_by(bird_id=order.bird_id, status="held").first()
+    if tx:
+        tx.status = "released"
+        
+    bird = db.query(models.Bird).filter_by(id=order.bird_id).first()
+    if bird:
+        bird.status = "sold"
+        
+    db.commit()
+    
+    msg = f"✅ ESCROW (Sotuvchiga o'tkazildi):\nBuyurtma ID: {order.id}\nXaridor tovarini oldi. Summa ({order.total_amount} UZS) sotuvchiga hisobiga o'tkazish tavsiya qilinadi."
+    background_tasks.add_task(send_telegram_notification, ADMIN_CHAT_ID, msg)
+    
+    return {"status": "success", "message": "Pul sotuvchiga o'tkazilishga ruhsat berildi."}
+
+@app.post("/pay/dispute/{order_id}")
+async def dispute_order(order_id: str, request: schemas.DisputeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    order = db.query(models.Order).filter_by(id=order_id).first()
+    if not order or order.escrow_status != "payment_held":
+        raise HTTPException(400, "Order is not in held status")
+        
+    order.escrow_status = "disputed"
+    
+    tx = db.query(models.Transaction).filter_by(bird_id=order.bird_id, status="held").first()
+    if tx:
+        tx.status = "disputed"
+        
+    db.commit()
+    
+    msg = f"🚨 NIZO (DISPUTE) OCHILDI:\nBuyurtma ID: {order.id}\nSabab: {request.reason}\nAdmin aralashuvi kerak!"
+    background_tasks.add_task(send_telegram_notification, ADMIN_CHAT_ID, msg)
+    
+    return {"status": "success", "message": "Nizo ochildi va adminga uzatildi."}
+
 # --- REAL-TIME CHAT (WEBSOCKETS) ---
 class ConnectionManager:
     def __init__(self):
