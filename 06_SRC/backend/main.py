@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form, File, UploadFile, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Form, File, UploadFile, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -78,6 +78,54 @@ async def send_telegram_photo_local(chat_id: str, local_path: str, caption: str)
                 )
         except Exception as e:
             print(f"Telegram sendPhoto Error: {e}")
+
+@app.get("/api/telegram/set-webhook")
+async def set_telegram_webhook(request: Request):
+    """Admin endpoint to automatically set the Telegram Webhook to this server's URL."""
+    host_url = str(request.base_url).rstrip("/")
+    # Change to https if the request came as http due to proxy
+    if host_url.startswith("http://"):
+        host_url = host_url.replace("http://", "https://")
+        
+    webhook_url = f"{host_url}/webhook/telegram"
+    
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?url={webhook_url}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url)
+        return resp.json()
+
+@app.post("/webhook/telegram")
+async def telegram_webhook(update: dict):
+    """Handle incoming Telegram messages (like /start)"""
+    if "message" in update and "text" in update["message"]:
+        chat_id = update["message"]["chat"]["id"]
+        text = update["message"]["text"]
+        
+        if text.startswith("/start"):
+            welcome_text = (
+                "👋 Assalomu alaykum! <b>Qush Uyi</b> platformasinkng rasmiy botiga xush kelibsiz.\n\n"
+                "👇 Pastdagi tugmani bosib ilovaga kiring va qushlarni xarid qiling yoki soting!"
+            )
+            
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            payload = {
+                "chat_id": chat_id,
+                "text": welcome_text,
+                "parse_mode": "HTML",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            # Make sure you change this URL later if you deploy Flutter Web!
+                            {"text": "📱 Ilovani ochish", "web_app": {"url": "https://qush-uyi-platform.vercel.app"}}
+                        ]
+                    ]
+                }
+            }
+            async with httpx.AsyncClient() as client:
+                await client.post(url, json=payload)
+                
+    return {"status": "ok"}
+
 
 # --- STARTUP EVENT (SEEDS) ---
 @app.on_event("startup")
