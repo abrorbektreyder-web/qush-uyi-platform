@@ -77,7 +77,7 @@ class BirdsNotifier extends StateNotifier<AsyncValue<BirdsState>> {
         hasMore: result.items.length == limit,
         offset: currentState.offset + limit,
       ));
-    } catch (e, st) {
+    } catch (e, _) {
       state = AsyncValue.data(currentState.copyWith(isLoadingMore: false));
     }
   }

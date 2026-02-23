@@ -10,6 +10,8 @@ import qrcode
 from datetime import datetime
 import json
 import subprocess
+import httpx
+import asyncio
 
 from database import engine, get_db, Base
 import models
@@ -38,6 +40,19 @@ os.makedirs(QR_DIR, exist_ok=True)
 os.makedirs(DOC_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "mock_token")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "123456")
+
+async def send_telegram_notification(chat_id: str, message: str):
+    if TELEGRAM_BOT_TOKEN == "mock_token":
+        print(f"[MOCK TELEGRAM Notification to {chat_id}]: {message}")
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    async with httpx.AsyncClient() as client:
+        try:
+            await client.post(url, json={"chat_id": chat_id, "text": message})
+        except Exception as e:
+            print(f"Telegram API Error: {e}")
 
 # --- STARTUP EVENT (SEEDS) ---
 @app.on_event("startup")
@@ -375,7 +390,7 @@ async def get_shop_items(db: Session = Depends(get_db)):
     return items
 
 @app.post("/shop/buy/{item_id}")
-async def buy_shop_item(item_id: str, quantity: int = Form(...), user_id: str = Form(...), db: Session = Depends(get_db)):
+async def buy_shop_item(background_tasks: BackgroundTasks, item_id: str, quantity: int = Form(...), user_id: str = Form(...), db: Session = Depends(get_db)):
     item = db.query(models.ShopItem).filter_by(id=item_id).first()
     if not item or item.stock_quantity < quantity:
         raise HTTPException(400, "Maxsulot qolmagan yoki topilmadi")
@@ -393,6 +408,9 @@ async def buy_shop_item(item_id: str, quantity: int = Form(...), user_id: str = 
     db.refresh(order)
     
     # Official Shop direct to rahbariyat card logic goes here via Webhook!
+    notification_msg = f"🛒 Yangi Do'kon Buyurtmasi!\nID: {order.id}\nMaxsulot: {item.name}\nSoni: {quantity} ta\nJami: {total_amount} UZS"
+    background_tasks.add_task(send_telegram_notification, ADMIN_CHAT_ID, notification_msg)
+
     return {"status": "success", "message": "Buyurtma qabul qilindi!", "order_id": order.id, "total": total_amount}
 
 @app.get("/birds/{bird_id}/passport")
