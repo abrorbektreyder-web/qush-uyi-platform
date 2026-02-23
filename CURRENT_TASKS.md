@@ -33,17 +33,17 @@
 - [x] 6.5. Communication UI: E'lon sahifasida "Call" va "Telegram" tugmalari.
 
 ### 🟡 7. 🤝 BUYURTMA STATUSI VA NIZO (ESCROW DISPUTE)
-- [ ] 7.1. "Mening Buyurtmalarim" sahifasini yaratish.
-- [ ] 7.2. Tovar yetib borganda "Qabul qildim" bosish va pulni sotuvchiga tushirish.
-- [ ] 7.3. "Muammo bor" bosish orqali adminga bot orqali shikoyat yuborish.
+- [x] 7.1. "Mening Buyurtmalarim" sahifasini yaratish.
+- [x] 7.2. Tovar yetib borganda "Qabul qildim" bosish va pulni sotuvchiga tushirish.
+- [x] 7.3. "Muammo bor" bosish orqali adminga bot orqali shikoyat yuborish.
 
 ### 🔵 8. CHAT SYSTEM (ALOQA)
 - [x] 8.1. Real-time chat (Websockets).
 - [x] 8.2. Xavfsizlik ogohlantirishlari (Karta, payme).
 
 ### 🔵 9. VIRAL SHARE (MARKETING)
-- [ ] 9.1. Telegram post generator.
-- [ ] 9.2. "Share" tugmasi.
+- [x] 9.1. Telegram post generator.
+- [x] 9.2. "Share" tugmasi.
 
 ### 🔴 10. ADMIN PANEL (BOSHQARUV)
 - [x] 10.1. Dashboard statistikasi.

@@ -12,6 +12,9 @@ import json
 import subprocess
 import httpx
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from database import engine, get_db, Base
 import models
@@ -42,6 +45,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "mock_token")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "123456")
+TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID", "123456")
 
 async def send_telegram_notification(chat_id: str, message: str):
     if TELEGRAM_BOT_TOKEN == "mock_token":
@@ -50,9 +54,30 @@ async def send_telegram_notification(chat_id: str, message: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     async with httpx.AsyncClient() as client:
         try:
-            await client.post(url, json={"chat_id": chat_id, "text": message})
+            await client.post(url, json={"chat_id": chat_id, "text": message, "parse_mode": "HTML"})
         except Exception as e:
             print(f"Telegram API Error: {e}")
+
+async def send_telegram_photo_local(chat_id: str, local_path: str, caption: str):
+    if TELEGRAM_BOT_TOKEN == "mock_token":
+        print(f"[MOCK TELEGRAM Photo to {chat_id}]: {caption}")
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    
+    if not os.path.exists(local_path):
+        print(f"Photo not found: {local_path}")
+        return
+        
+    async with httpx.AsyncClient() as client:
+        try:
+            with open(local_path, "rb") as f:
+                await client.post(
+                    url, 
+                    data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"},
+                    files={"photo": f}
+                )
+        except Exception as e:
+            print(f"Telegram sendPhoto Error: {e}")
 
 # --- STARTUP EVENT (SEEDS) ---
 @app.on_event("startup")
@@ -519,3 +544,42 @@ async def get_passport(bird_id: str, db: Session = Depends(get_db)):
         "is_verified": bird.health_badge == "verified_healthy",
         "diagnosis": health_record.diagnosis if health_record else None
     }
+
+# --- ADMIN PANEL TELEGRAM INTEGRATION ---
+@app.post("/admin/birds/{bird_id}/verify")
+async def verify_and_publish_bird(bird_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    bird = db.query(models.Bird).filter_by(id=bird_id).first()
+    if not bird:
+        raise HTTPException(404, "Qush topilmadi")
+        
+    bird.health_badge = "verified_healthy"
+    db.commit()
+
+    # Tasdiqlangach Dildan post yasab Rasmiy Kanalga uzatamiz!
+    location = db.query(models.Region).filter_by(id=bird.region_id).first()
+    reg_name = location.name_uz if location else "Noma'lum qism"
+    
+    formatted_price = f"{int(bird.price):,} UZS".replace(",", " ") if bird.price else "Kelishiladi"
+    
+    caption = (
+        f"✅ <b>YANGI TASDIQLANGAN QUsh</b>\n\n"
+        f"🐦 <b>Tur:</b> {bird.species}\n"
+        f"💰 <b>Narx:</b> {formatted_price}\n"
+        f"📍 <b>Hudud:</b> {reg_name}\n"
+        f"📝 <b>Tavsif:</b> {bird.description or 'Yozilmagan'}\n\n"
+        f"🛡 <b>Qush Uyi Platformasi tomonidan ishonchli deb topildi!</b>\n\n"
+        f"👉 <b>Xarid qilish uchun ilovaga kiring:</b> \n"
+        f"🌐 https://qush-uyi.uz/birds/{bird.id}"
+    )
+
+    if bird.media and len(bird.media) > 0:
+        # Assuming the first media is image. Media URL is like "/uploads/..." 
+        # So we strip the leading "/" to get the local filesystem path relative to CWD.
+        photo_local_path = bird.media[0].file_url.lstrip("/") 
+        background_tasks.add_task(send_telegram_photo_local, TELEGRAM_CHANNEL_ID, photo_local_path, caption)
+    else:
+        # Agar rasm bo'lmasa oddiy text yuboramiz.
+        background_tasks.add_task(send_telegram_notification, TELEGRAM_CHANNEL_ID, caption)
+
+    return {"status": "success", "message": "Qush tasdiqlandi va Kanalga yuborildi!"}
+

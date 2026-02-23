@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/glass_container.dart';
 import '../../payment/presentation/providers/orders_provider.dart';
-import 'package:go_router/go_router.dart';
 
 class OrdersScreen extends ConsumerWidget {
   const OrdersScreen({super.key});

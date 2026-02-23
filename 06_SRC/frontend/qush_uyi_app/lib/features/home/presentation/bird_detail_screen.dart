@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/glass_container.dart';
@@ -71,6 +72,25 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
             pinned: true,
             backgroundColor: AppColors.background,
             iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share, color: Colors.white),
+                onPressed: () {
+                  final textToShare =
+                      "Yangi qush sotuvda: ${widget.bird.species} - $formattedPrice\\nBatafsil: https://qush-uyi.uz/birds/${widget.bird.id}";
+                  Clipboard.setData(ClipboardData(text: textToShare));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          "E'lon nusxalandi! Endi Telegram yoki boshqa tarmoqda do'stlaringizga yuborishingiz mumkin.",
+                          style: TextStyle(color: Colors.white)),
+                      backgroundColor: Colors.blueAccent,
+                      duration: Duration(seconds: 4),
+                    ),
+                  );
+                },
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: imageUrl.isNotEmpty
                   ? Image.network(imageUrl, fit: BoxFit.cover)
