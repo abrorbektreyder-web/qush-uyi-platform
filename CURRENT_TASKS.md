@@ -25,9 +25,9 @@
 - [x] 5.2. Pulni muzlatish (Hold) tizimi.
 - [x] 5.3. Dispute (Nizo) va pulni qaytarish logikasi.
 
-### � 6. OFFICIAL SHOP & COMMUNICATION (DO'KON VA ALOQA)
-- [ ] 6.1. Tovarlar katalogi (Yem, Dori, Qafas).
-- [ ] 6.2. Savatcha (Cart) va to'lov.
+### 6. OFFICIAL SHOP & COMMUNICATION (DO'KON VA ALOQA)
+- [x] 6.1. Tovarlar katalogi (Yem, Dori, Qafas).
+- [x] 6.2. Savatcha (Cart) va to'lov.
 - [ ] 6.3. Telegram Linker: Bot orqali foydalanuvchini bog'lash.
 - [ ] 6.4. Privacy Settings: Telefon va Telegram switcherlari.
 - [ ] 6.5. Communication UI: E'lon sahifasida "Call" va "Telegram" tugmalari.
@@ -37,8 +37,8 @@
 - [ ] 7.2. Kuryer biriktirish funksiyasi.
 
 ### 🔵 8. CHAT SYSTEM (ALOQA)
-- [ ] 8.1. Real-time chat.
-- [ ] 8.2. Xavfsizlik ogohlantirishlari.
+- [x] 8.1. Real-time chat (Websockets).
+- [x] 8.2. Xavfsizlik ogohlantirishlari (Karta, payme).
 
 ### 🔵 9. VIRAL SHARE (MARKETING)
 - [ ] 9.1. Telegram post generator.
