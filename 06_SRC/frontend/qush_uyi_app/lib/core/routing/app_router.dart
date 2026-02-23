@@ -72,7 +72,20 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
+  // Telegram Mini App tgWebAppData parametrlarini to'g'ri boshqarish
+  redirect: (context, state) {
+    final location = state.uri.toString();
+    // Agar Telegram Mini App dan kelsa (tgWebAppData mavjud bo'lsa)
+    if (location.contains('tgWebAppData') || location == '/') {
+      return '/splash';
+    }
+    return null; // boshqa hollarda o'zgarishsiz
+  },
   routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const SplashScreen(),
+    ),
     GoRoute(
       path: '/splash',
       builder: (context, state) => const SplashScreen(),
