@@ -288,6 +288,8 @@ async def get_birds(
             "region_name": region_name.name_uz if region_name else "Noma'lum",
             "seller_name": owner.full_name if owner else "Foydalanuvchi",
             "seller_phone": owner.phone_number if owner and owner.show_phone else None,
+            "seller_telegram": owner.telegram_id if owner and owner.allow_telegram else None,
+            "allow_telegram": owner.allow_telegram if owner else False,
             "media": media_urls
         })
         

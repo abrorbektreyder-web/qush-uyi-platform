@@ -8,6 +8,8 @@ class BirdModel {
   final String regionName;
   final String sellerName;
   final String? sellerPhone;
+  final String? sellerTelegram;
+  final bool allowTelegram;
   final List<MediaModel> media;
 
   BirdModel({
@@ -20,6 +22,8 @@ class BirdModel {
     required this.regionName,
     required this.sellerName,
     this.sellerPhone,
+    this.sellerTelegram,
+    this.allowTelegram = true,
     this.media = const [],
   });
 
@@ -35,6 +39,8 @@ class BirdModel {
       regionName: json['region_name'] ?? "Noma'lum",
       sellerName: json['seller_name'] ?? 'Sotuvchi',
       sellerPhone: json['seller_phone'],
+      sellerTelegram: json['seller_telegram']?.toString(),
+      allowTelegram: json['allow_telegram'] ?? true,
       media: mediaList.map((m) => MediaModel.fromJson(m)).toList(),
     );
   }

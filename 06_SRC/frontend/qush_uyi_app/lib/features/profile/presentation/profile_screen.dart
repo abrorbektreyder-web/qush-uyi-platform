@@ -75,7 +75,7 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () {}),
                   _buildDivider(),
                   _buildListTile(Icons.settings_outlined, "Sozlamalar",
-                      onTap: () {}),
+                      onTap: () => context.push('/profile/settings')),
                   _buildDivider(),
                   _buildListTile(Icons.exit_to_app, "Tizimdan chiqish",
                       isDestructive: true, onTap: () {}),

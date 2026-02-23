@@ -6,6 +6,7 @@ import '../../features/home/presentation/bird_detail_screen.dart';
 import '../../features/home/data/bird_model.dart';
 import '../../features/add_listing/presentation/add_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/profile/presentation/settings_screen.dart';
 import '../../features/shop/presentation/shop_screen.dart';
 
 class CustomAnimatedPage extends CustomTransitionPage {
@@ -106,6 +107,11 @@ final GoRouter appRouter = GoRouter(
           path: '/profile',
           pageBuilder: (context, state) =>
               CustomAnimatedPage(child: const ProfileScreen()),
+        ),
+        GoRoute(
+          path: '/profile/settings',
+          pageBuilder: (context, state) =>
+              CustomAnimatedPage(child: const SettingsScreen()),
         ),
       ],
     ),

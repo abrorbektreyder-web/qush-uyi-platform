@@ -66,6 +66,8 @@ class BirdResponse(BaseModel):
     status: str
     seller_name: Optional[str] = None
     seller_phone: Optional[str] = None
+    seller_telegram: Optional[str] = None
+    allow_telegram: bool = True
     region_name: Optional[str] = None
     media: Optional[List[Dict[str, Any]]] = []
     

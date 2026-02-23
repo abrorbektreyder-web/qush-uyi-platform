@@ -28,9 +28,9 @@
 ### 6. OFFICIAL SHOP & COMMUNICATION (DO'KON VA ALOQA)
 - [x] 6.1. Tovarlar katalogi (Yem, Dori, Qafas).
 - [x] 6.2. Savatcha (Cart) va to'lov.
-- [ ] 6.3. Telegram Linker: Bot orqali foydalanuvchini bog'lash.
-- [ ] 6.4. Privacy Settings: Telefon va Telegram switcherlari.
-- [ ] 6.5. Communication UI: E'lon sahifasida "Call" va "Telegram" tugmalari.
+- [x] 6.3. Telegram Linker: Bot orqali foydalanuvchini bog'lash.
+- [x] 6.4. Privacy Settings: Telefon va Telegram switcherlari.
+- [x] 6.5. Communication UI: E'lon sahifasida "Call" va "Telegram" tugmalari.
 
 ### 🟡 7. LOGISTIKA (DELIVERY)
 - [ ] 7.1. Buyurtma statuslari (New -> Delivered).
@@ -45,6 +45,6 @@
 - [ ] 9.2. "Share" tugmasi.
 
 ### 🔴 10. ADMIN PANEL (BOSHQARUV)
-- [ ] 10.1. Dashboard statistikasi.
-- [ ] 10.2. Verifikatsiya markazi.
-- [ ] 10.3. Do'kon omborini boshqarish.
+- [x] 10.1. Dashboard statistikasi.
+- [x] 10.2. Verifikatsiya markazi.
+- [x] 10.3. Do'kon omborini boshqarish.

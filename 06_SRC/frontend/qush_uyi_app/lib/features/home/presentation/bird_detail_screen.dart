@@ -151,10 +151,42 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                               ),
                             ),
                             IconButton(
-                              onPressed: () {}, // Trigger call
+                              onPressed: () {
+                                if (widget.bird.sellerPhone != null &&
+                                    widget.bird.sellerPhone!.isNotEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Calling: ${widget.bird.sellerPhone}')));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Telefon raqam yashirilgan yoki mavjud emas.')));
+                                }
+                              },
                               icon: const Icon(Icons.call,
                                   color: AppColors.primary),
+                              style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      AppColors.primary.withOpacity(0.1)),
                             ),
+                            if (widget.bird.allowTelegram) ...[
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Yozish: @${widget.bird.sellerTelegram ?? 'Noma\'lum'}')));
+                                },
+                                icon: const Icon(Icons.telegram,
+                                    color: Colors.blueAccent),
+                                style: IconButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.blueAccent.withOpacity(0.1)),
+                              ),
+                            ]
                           ],
                         ),
                         const SizedBox(height: 20),
