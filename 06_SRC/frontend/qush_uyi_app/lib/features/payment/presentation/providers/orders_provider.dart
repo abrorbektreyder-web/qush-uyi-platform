@@ -2,7 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  return Dio(BaseOptions(baseUrl: 'http://127.0.0.1:8000'));
+  return Dio(BaseOptions(
+      baseUrl: 'https://qush-uyi-platform-production.up.railway.app'));
 });
 
 final ordersProvider =
