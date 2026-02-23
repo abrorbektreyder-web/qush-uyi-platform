@@ -4,6 +4,8 @@ import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/presentation/bird_detail_screen.dart';
 import '../../features/home/data/bird_model.dart';
+import '../../features/add_listing/presentation/add_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 
 class CustomAnimatedPage extends CustomTransitionPage {
   CustomAnimatedPage({required Widget child})
@@ -13,20 +15,6 @@ class CustomAnimatedPage extends CustomTransitionPage {
             return FadeTransition(opacity: animation, child: child);
           },
         );
-}
-
-class AddScreen extends StatelessWidget {
-  const AddScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Add Listing')));
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Profile')));
 }
 
 class ScaffoldWithNavBar extends StatelessWidget {
