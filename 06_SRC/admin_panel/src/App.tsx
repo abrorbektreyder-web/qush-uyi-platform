@@ -4,6 +4,8 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './pages/Dashboard';
 import { VerificationCenter } from './pages/VerificationCenter';
 import { ShopManager } from './pages/ShopManager';
+import { Settings } from './pages/Settings';
+import './modal.css';
 
 function App() {
   return (
@@ -17,7 +19,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/verifications" element={<VerificationCenter />} />
           <Route path="/shop" element={<ShopManager />} />
-          <Route path="/settings" element={<div style={{ color: '#fff' }}><h2>Platforma Sozlamalari... (TBA)</h2></div>} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </main>
     </div>

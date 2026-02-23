@@ -8,6 +8,8 @@ export const VerificationCenter: React.FC = () => {
         { id: 'BQ-903', seller: 'VET.UZ', bird: 'Litsenziya Tasdiqlash', file: 'Lic-1002.pdf', status: 'pending' },
     ]);
 
+    const [previewFile, setPreviewFile] = useState<{ id: string, name: string } | null>(null);
+
     const handleAction = (id: string, action: 'approve' | 'reject') => {
         setData((prev) => prev.map((item) => item.id === id ? { ...item, status: action === 'approve' ? 'success' : 'danger' } : item));
     };
@@ -38,7 +40,12 @@ export const VerificationCenter: React.FC = () => {
                                 <td style={{ fontWeight: 'bold' }}>{item.id}</td>
                                 <td>{item.seller}</td>
                                 <td>{item.bird}</td>
-                                <td style={{ color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}>{item.file}</td>
+                                <td
+                                    style={{ color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                    onClick={() => setPreviewFile({ id: item.id, name: item.file })}
+                                >
+                                    {item.file}
+                                </td>
                                 <td>
                                     {item.status === 'pending' ? (
                                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -65,6 +72,33 @@ export const VerificationCenter: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* File Preview Modal */}
+            {previewFile && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <button className="modal-close" onClick={() => setPreviewFile(null)}><X size={24} /></button>
+                        <h2 style={{ marginBottom: '16px' }}>Hujjatni ko'rish</h2>
+                        <div style={{ background: '#000', borderRadius: '8px', padding: '32px', textAlign: 'center', marginBottom: '16px' }}>
+                            <ShieldAlert size={60} color="var(--primary)" style={{ marginBottom: '16px', display: 'inline-block' }} />
+                            <p style={{ color: 'var(--text-muted)' }}>{previewFile.name}</p>
+                            <h3 style={{ marginTop: '8px' }}>[Preview Mode: {previewFile.name.split('.').pop()?.toUpperCase()}]</h3>
+                            <p style={{ marginTop: '16px', fontSize: '0.8rem', color: 'gray' }}>Ushbu fayl backend server orqali renderlanishi mumkin. Hozirgi holatda Admin faqat mock oynani o'qimoqda.</p>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button className="btn btn-primary" onClick={() => {
+                                handleAction(previewFile.id, 'approve');
+                                setPreviewFile(null);
+                            }}>Tasdiqlash</button>
+                            <button className="btn btn-danger" onClick={() => {
+                                handleAction(previewFile.id, 'reject');
+                                setPreviewFile(null);
+                            }}>Rad Yetish</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
