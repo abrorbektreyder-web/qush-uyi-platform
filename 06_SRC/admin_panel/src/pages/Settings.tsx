@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Shield, Smartphone, Bell, Eye } from 'lucide-react';
+import { Save, Shield, Bell, Eye } from 'lucide-react';
 
 export const Settings = () => {
     const [activeTab, setActiveTab] = useState('umumiy');
