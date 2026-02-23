@@ -1,25 +1,18 @@
-FROM python:3.10-slim
+# Railway rasmiy FastAPI hujjatiga mos Dockerfile
+# https://docs.railway.com/guides/fastapi
+FROM python:3-alpine
 
-# Ffmpeg o'rnatamiz (Videolarni siqish uchun backendda kerak edi)
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
+# Ffmpeg o'rnatamiz (Video siqish uchun)
+RUN apk add --no-cache ffmpeg
 
 # Ishlash papkasini /app deb belgilaymiz
 WORKDIR /app
 
-# Kutubxonalar ro'yxatini nusxalaymiz
-COPY requirements.txt .
+# Kodlarni konteynerga nusxalaymiz
+COPY . .
 
 # Kutubxonalarni o'rnatamiz
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Kodlarni nusxalaymiz
-COPY . .
-
-# Railway uchun kerakli Portni ochamiz
-EXPOSE 8000
-EXPOSE 8080
-
-# Eng asosiy yurgizish komandasi (Railway o'zi $PORT o'zgaruvchisini beradi)
+# Serverni port bilan ishga tushuramiz
 CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
