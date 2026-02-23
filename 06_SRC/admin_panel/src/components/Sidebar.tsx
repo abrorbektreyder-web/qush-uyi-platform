@@ -2,7 +2,11 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, CheckCircle, Store, Settings, LogOut } from 'lucide-react';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+    onLogout: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     const activeStyle = {
         color: 'var(--primary)',
         backgroundColor: 'rgba(0, 255, 135, 0.05)',
@@ -46,7 +50,7 @@ export const Sidebar: React.FC = () => {
             </nav>
 
             <div style={{ padding: '0 32px' }}>
-                <button className="btn btn-danger" style={{ width: '100%', justifyContent: 'flex-start' }}>
+                <button className="btn btn-danger" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={onLogout}>
                     <LogOut size={20} /> Chiqish
                 </button>
             </div>
