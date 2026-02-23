@@ -158,22 +158,36 @@ async def link_telegram(request: schemas.LinkTelegramRequest, db: Session = Depe
     return {"status": "success", "message": "Telegram successfully linked", "user": user}
 
 # --- BIRD & MEDIA PROCESSOR ---
-def compress_video(input_path: str, output_path: str):
+async def compress_video(input_path: str, output_path: str):
     """
     Katta videolarni serverda siqish (FFMPEG).
     MVP uchun, agar ffmpeg yo'q bo'lsa xato bermaydi, shunchaki nusxa ko'chiradi.
+    ASINXRON (Async) logikasi qo'shildi: server oqimlarini qotirib qo'ymaydi.
     """
     try:
         command = [
             "ffmpeg", "-i", input_path, 
-            "-vcodec", "libx264", "-crf", "28", # Siqish darajasi (kichik piksellar)
+            "-vcodec", "libx264", "-crf", "28", # Siqish darajasi
             output_path
         ]
-        subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        os.remove(input_path) # Eski faylni o'chiramiz
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
+        await process.communicate()
+        
+        if process.returncode == 0:
+            if os.path.exists(input_path):
+                os.remove(input_path) # Eski faylni o'chiramiz
+        else:
+            raise Exception("FFMPEG failed to execute clean compression")
     except Exception as e:
         print(f"FFMPEG Compressor Error (Skipping compress): {e}")
-        shutil.move(input_path, output_path) # Fallback
+        try:
+            shutil.move(input_path, output_path) # Fallback
+        except:
+            pass
 
 @app.post("/birds/create-with-media")
 async def create_bird_with_media(
@@ -231,6 +245,10 @@ async def create_bird_with_media(
         sort_ord += 1
 
     db.commit()
+    
+    notification_msg = f"🦅 Yangi E'lon Kiritildi!\nID: {new_bird.id}\nTur: {breed}\nNarx: {price} UZS\nTasdiqlashni kutmoqda."
+    background_tasks.add_task(send_telegram_notification, ADMIN_CHAT_ID, notification_msg)
+
     return {"status": "success", "bird_id": new_bird.id}
 
 @app.get("/birds")
@@ -282,7 +300,7 @@ async def get_birds(
 
 # --- ESCROW & PAYMENT MODULE ---
 @app.post("/pay/process")
-async def process_payment(request: schemas.TransactionRequest, db: Session = Depends(get_db)):
+async def process_payment(background_tasks: BackgroundTasks, request: schemas.TransactionRequest, db: Session = Depends(get_db)):
     if request.amount <= 0: raise HTTPException(400, "Invalid amount")
     
     bird = db.query(models.Bird).filter_by(id=request.bird_id).first()
@@ -313,6 +331,9 @@ async def process_payment(request: schemas.TransactionRequest, db: Session = Dep
     
     db.commit()
     db.refresh(transaction)
+    
+    msg = f"💰 ESCROW (Narx Muzlatildi):\nBuyurtma ID: {order.id}\nSumma: {request.amount} UZS\nXaridor ID: {request.buyer_id}"
+    background_tasks.add_task(send_telegram_notification, ADMIN_CHAT_ID, msg)
     
     print(f"💰 ESCROW: Bird HELD, Order {order.id} CREATED, Money Muzlatildi (Tx: {transaction.id}).")
     return {"status": "success", "transaction_id": transaction.id, "order_id": order.id}
