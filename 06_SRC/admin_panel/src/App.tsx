@@ -7,6 +7,7 @@ import { VerificationCenter } from './pages/VerificationCenter';
 import { ShopManager } from './pages/ShopManager';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
+import { Analytics } from './pages/Analytics';
 import './modal.css';
 
 function App() {
@@ -14,9 +15,9 @@ function App() {
     return localStorage.getItem('admin_auth') === 'true';
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const location = useLocation();
 
-  // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
@@ -54,7 +55,7 @@ function App() {
 
       {/* Sidebar */}
       <div className={`sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
-        <Sidebar onLogout={handleLogout} />
+        <Sidebar onLogout={handleLogout} onAnalytics={() => setAnalyticsOpen(true)} />
       </div>
 
       {/* Main Content */}
@@ -67,6 +68,9 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+
+      {/* Analytics Slide-Over */}
+      {analyticsOpen && <Analytics onClose={() => setAnalyticsOpen(false)} />}
     </div>
   );
 }
