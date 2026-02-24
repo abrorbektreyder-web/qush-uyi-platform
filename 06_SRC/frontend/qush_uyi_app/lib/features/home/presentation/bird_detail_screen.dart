@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../shared/widgets/glass_container.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../data/bird_model.dart';
 import '../../payment/presentation/providers/payment_provider.dart';
 
@@ -55,6 +56,77 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
     }
   }
 
+  /// Open phone dialer
+  Future<void> _callSeller() async {
+    final phone = widget.bird.sellerPhone;
+    if (phone != null && phone.isNotEmpty) {
+      final uri = Uri.parse('tel:$phone');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Qo\'ng\'iroq: $phone')),
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Sotuvchi telefon raqamini yashirgan. Telegram orqali yozing.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Open Telegram chat
+  Future<void> _openTelegram() async {
+    final telegramId = widget.bird.sellerTelegram;
+    if (telegramId != null && telegramId.isNotEmpty && telegramId != 'null') {
+      // Try to open by username or by chat ID
+      final Uri telegramUri;
+      if (telegramId.startsWith('@')) {
+        telegramUri = Uri.parse('https://t.me/${telegramId.substring(1)}');
+      } else {
+        // If it's a numeric ID, use tg://user link
+        telegramUri = Uri.parse('https://t.me/$telegramId');
+      }
+      if (await canLaunchUrl(telegramUri)) {
+        await launchUrl(telegramUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Telegram: $telegramId')),
+          );
+        }
+      }
+    } else {
+      // Fallback: if no telegram username, try phone number
+      final phone = widget.bird.sellerPhone;
+      if (phone != null && phone.isNotEmpty) {
+        final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+        final uri = Uri.parse('https://t.me/$cleanPhone');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Sotuvchining Telegram manzili topilmadi. Sozlamalarda bog\'lanmagan.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String imageUrl = widget.bird.media.isNotEmpty
@@ -77,7 +149,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                 icon: const Icon(Icons.share, color: Colors.white),
                 onPressed: () {
                   final textToShare =
-                      "Yangi qush sotuvda: ${widget.bird.species} - $formattedPrice\\nBatafsil: https://qush-uyi.uz/birds/${widget.bird.id}";
+                      "Yangi qush sotuvda: ${widget.bird.species} - $formattedPrice\nBatafsil: https://qush-uyi.uz/birds/${widget.bird.id}";
                   Clipboard.setData(ClipboardData(text: textToShare));
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -143,7 +215,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Action Buttons
+                  // Seller & Action Buttons
                   GlassContainer(
                     radius: 16,
                     padding: const EdgeInsets.all(20),
@@ -170,41 +242,27 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                                 ],
                               ),
                             ),
+                            // Phone call button
                             IconButton(
-                              onPressed: () {
-                                if (widget.bird.sellerPhone != null &&
-                                    widget.bird.sellerPhone!.isNotEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(
-                                              'Calling: ${widget.bird.sellerPhone}')));
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Telefon raqam yashirilgan yoki mavjud emas.')));
-                                }
-                              },
+                              onPressed: _callSeller,
                               icon: const Icon(Icons.call,
                                   color: AppColors.primary),
                               style: IconButton.styleFrom(
                                   backgroundColor:
                                       AppColors.primary.withOpacity(0.1)),
+                              tooltip: 'Qo\'ng\'iroq qilish',
                             ),
+                            // Telegram button
                             if (widget.bird.allowTelegram) ...[
                               const SizedBox(width: 8),
                               IconButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(
-                                              'Yozish: @${widget.bird.sellerTelegram ?? 'Noma\'lum'}')));
-                                },
+                                onPressed: _openTelegram,
                                 icon: const Icon(Icons.telegram,
                                     color: Colors.blueAccent),
                                 style: IconButton.styleFrom(
                                     backgroundColor:
                                         Colors.blueAccent.withOpacity(0.1)),
+                                tooltip: 'Telegram orqali yozish',
                               ),
                             ]
                           ],

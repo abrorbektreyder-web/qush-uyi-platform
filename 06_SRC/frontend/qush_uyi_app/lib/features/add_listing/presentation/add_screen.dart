@@ -20,6 +20,7 @@ class _AddScreenState extends ConsumerState<AddScreen> {
   int _currentStep = 0;
   final List<_MediaItem> _mediaFiles = [];
   bool _isSubmitting = false;
+  PlatformFile? _documentFile;
 
   // Form controllers
   final _breedController = TextEditingController();
@@ -114,6 +115,24 @@ class _AddScreenState extends ConsumerState<AddScreen> {
       }
     } catch (e) {
       _showError('Video tanlashda xatolik: $e');
+    }
+  }
+
+  /// Pick document file (PDF, image, etc.)
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
+        withData: true,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _documentFile = result.files.first;
+        });
+      }
+    } catch (e) {
+      _showError('Hujjat tanlashda xatolik: $e');
     }
   }
 
@@ -489,10 +508,44 @@ class _AddScreenState extends ConsumerState<AddScreen> {
                             "Bu majburiy emas, lekin yuklash orqali e'loningizni platformada yashil 'Tasdiqlangan' belgi bilan ko'paytirasiz.",
                             style: TextStyle(color: AppColors.textSecondary)),
                         const SizedBox(height: 24),
+                        if (_documentFile != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.description,
+                                    color: AppColors.primary),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _documentFile!.name,
+                                    style: const TextStyle(color: Colors.white),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close,
+                                      color: Colors.white54, size: 20),
+                                  onPressed: () =>
+                                      setState(() => _documentFile = null),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         OutlinedButton.icon(
-                          onPressed: () {},
+                          onPressed: _pickDocument,
                           icon: const Icon(Icons.file_upload),
-                          label: const Text("Hujjat yuklash"),
+                          label: Text(_documentFile != null
+                              ? "Boshqa hujjat tanlash"
+                              : "Hujjat yuklash"),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: BorderSide(
