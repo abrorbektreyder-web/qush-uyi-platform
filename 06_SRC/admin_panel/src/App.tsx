@@ -15,7 +15,6 @@ function App() {
     return localStorage.getItem('admin_auth') === 'true';
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -48,29 +47,24 @@ function App() {
         </button>
       </div>
 
-      {/* Sidebar Overlay (mobile) */}
       {sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <div className={`sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
-        <Sidebar onLogout={handleLogout} onAnalytics={() => setAnalyticsOpen(true)} />
+        <Sidebar onLogout={handleLogout} />
       </div>
 
-      {/* Main Content */}
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/verifications" element={<VerificationCenter />} />
           <Route path="/shop" element={<ShopManager />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-
-      {/* Analytics Slide-Over */}
-      {analyticsOpen && <Analytics onClose={() => setAnalyticsOpen(false)} />}
     </div>
   );
 }
