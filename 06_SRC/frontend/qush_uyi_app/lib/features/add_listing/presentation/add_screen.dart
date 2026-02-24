@@ -258,6 +258,10 @@ class _AddScreenState extends ConsumerState<AddScreen> {
             await prefs.setString('user_id', response.data['user_id']);
           }
 
+          // Increment listing count
+          final currentCount = prefs.getInt('listing_count') ?? 0;
+          await prefs.setInt('listing_count', currentCount + 1);
+
           // Refresh the birds list
           ref.read(birdsNotifierProvider.notifier).fetchInitial();
 
