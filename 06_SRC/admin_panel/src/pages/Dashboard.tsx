@@ -3,12 +3,8 @@ import {
     AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
 import {
-    Wallet, Activity, ShoppingBag, Users, Zap, ArrowUpRight, ArrowDownRight
+    Wallet, Activity, ShoppingBag, Users, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
-
-const sparkData = [
-    { v: 3200 }, { v: 4100 }, { v: 3800 }, { v: 5200 }, { v: 6800 }, { v: 9200 }, { v: 7400 },
-];
 
 const volumeData = [
     { name: '18', escrow: 4200, shop: 2400 },
