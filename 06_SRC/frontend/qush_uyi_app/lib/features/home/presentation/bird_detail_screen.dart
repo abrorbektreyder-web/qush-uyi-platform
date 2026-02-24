@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../data/bird_model.dart';
@@ -20,12 +21,61 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
   bool _isProcessing = false;
 
   void _handleEscrow() async {
+    // Check price > 0
+    if (widget.bird.price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Bu e\'londa narx ko\'rsatilmagan. Sotuvchiga bog\'laning.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Confirm dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text("To'lov tasdiqlash",
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          "Siz \"${widget.bird.species}\" uchun ${_formatPrice(widget.bird.price)} to'lov qilmoqchisiz.\n\n"
+          "Pul sizning hisobingizda muzlatiladi. Tovar qo'lingizga yetgach, admin pul sotuvchiga uzatadi.",
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Bekor qilish',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Tasdiqlash"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     setState(() => _isProcessing = true);
+
+    // Get real user_id fron SharedPreferences or generate
+    final prefs = await SharedPreferences.getInstance();
+    String buyerId = prefs.getString('user_id') ?? '';
+    if (buyerId.isEmpty) {
+      buyerId = 'buyer_${DateTime.now().millisecondsSinceEpoch}';
+      await prefs.setString('user_id', buyerId);
+    }
+
     final repo = ref.read(paymentRepositoryProvider);
     final success = await repo.processEscrowPayment(
       birdId: widget.bird.id,
       amount: widget.bird.price,
-      buyerId: 'mock_buyer_id',
+      buyerId: buyerId,
     );
     setState(() => _isProcessing = false);
 
@@ -34,26 +84,48 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
         context: context,
         builder: (c) => AlertDialog(
           backgroundColor: AppColors.surface,
-          title: const Text("Xavfsiz To'lov (Escrow)",
-              style: TextStyle(color: Colors.white)),
-          content: const Text(
-              "Pullaringiz muvaffaqiyatli muzlatildi. Sotuvchi endi sizga maxsulotni yetkazib berishi kerak. Admin monitoringda.",
-              style: TextStyle(color: Colors.white70)),
+          title: Row(
+            children: const [
+              Icon(Icons.check_circle, color: AppColors.primary, size: 28),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text("Muvaffaqiyatli!",
+                    style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+          content: Text(
+              "Pul muvaffaqiyatli muzlatildi — ${_formatPrice(widget.bird.price)}.\n\n"
+              "Sotuvchi sizga qushni yetkazib berishi kerak. "
+              "Qushni qo'lingizga olgach, admin tomonidan pul sotuvchiga o'tkaziladi.\n\n"
+              "Muammo bo'lsa, profilda \"Nizo ochish\" tugmasini bosing.",
+              style: const TextStyle(color: Colors.white70)),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(c),
+              onPressed: () {
+                Navigator.pop(c);
+                Navigator.pop(context); // Go back to home
+              },
               child: const Text('Tushunarli',
                   style: TextStyle(color: AppColors.primary)),
             )
           ],
         ),
       );
-    } else {
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Xatolik yuz berdi. Yoki ushbu qush band qilingan.')),
+          content:
+              Text('Bu qush allaqachon band qilingan yoki xatolik yuz berdi.'),
+          backgroundColor: Colors.orange,
+        ),
       );
     }
+  }
+
+  String _formatPrice(double price) {
+    return '${price.toInt()} UZS'
+        .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ' ');
   }
 
   /// Open phone dialer
@@ -61,12 +133,17 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
     final phone = widget.bird.sellerPhone;
     if (phone != null && phone.isNotEmpty) {
       final uri = Uri.parse('tel:$phone');
-      if (await canLaunchUrl(uri)) {
+      try {
         await launchUrl(uri);
-      } else {
+      } catch (_) {
         if (mounted) {
+          // Copy phone number as fallback
+          Clipboard.setData(ClipboardData(text: phone));
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Qo\'ng\'iroq: $phone')),
+            SnackBar(
+              content: Text('📋 Raqam nusxalandi: $phone'),
+              backgroundColor: AppColors.primary,
+            ),
           );
         }
       }
@@ -86,39 +163,63 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
   /// Open Telegram chat
   Future<void> _openTelegram() async {
     final telegramId = widget.bird.sellerTelegram;
-    if (telegramId != null && telegramId.isNotEmpty && telegramId != 'null') {
-      // Try to open by username or by chat ID
-      final Uri telegramUri;
+
+    if (telegramId != null &&
+        telegramId.isNotEmpty &&
+        telegramId != 'null' &&
+        telegramId != 'None') {
+      Uri telegramUri;
+
       if (telegramId.startsWith('@')) {
+        // Username
         telegramUri = Uri.parse('https://t.me/${telegramId.substring(1)}');
+      } else if (telegramId.startsWith('+')) {
+        // Phone number with +
+        telegramUri = Uri.parse('https://t.me/$telegramId');
+      } else if (RegExp(r'^\d+$').hasMatch(telegramId)) {
+        // Numeric ID — try as user link
+        telegramUri = Uri.parse('tg://user?id=$telegramId');
       } else {
-        // If it's a numeric ID, use tg://user link
+        // Treat as username
         telegramUri = Uri.parse('https://t.me/$telegramId');
       }
-      if (await canLaunchUrl(telegramUri)) {
+
+      try {
         await launchUrl(telegramUri, mode: LaunchMode.externalApplication);
-      } else {
+      } catch (_) {
         if (mounted) {
+          Clipboard.setData(ClipboardData(text: telegramId));
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Telegram: $telegramId')),
+            SnackBar(
+              content: Text('📋 Telegram: $telegramId nusxalandi'),
+              backgroundColor: Colors.blueAccent,
+            ),
           );
         }
       }
     } else {
-      // Fallback: if no telegram username, try phone number
+      // Fallback: use phone number for telegram
       final phone = widget.bird.sellerPhone;
       if (phone != null && phone.isNotEmpty) {
-        final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-        final uri = Uri.parse('https://t.me/$cleanPhone');
-        if (await canLaunchUrl(uri)) {
+        final uri = Uri.parse('https://t.me/$phone');
+        try {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Telegramda $phone ga yozing'),
+                backgroundColor: Colors.blueAccent,
+              ),
+            );
+          }
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                  'Sotuvchining Telegram manzili topilmadi. Sozlamalarda bog\'lanmagan.'),
+              content:
+                  Text('Sotuvchining aloqa ma\'lumotlari hali kiritilmagan.'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -132,8 +233,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
     String imageUrl = widget.bird.media.isNotEmpty
         ? 'https://qush-uyi-platform-production-0146.up.railway.app${widget.bird.media.first.url}'
         : '';
-    final formattedPrice = '${widget.bird.price.toInt()} UZS'
-        .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ' ');
+    final formattedPrice = _formatPrice(widget.bird.price);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -154,10 +254,10 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                          "E'lon nusxalandi! Endi Telegram yoki boshqa tarmoqda do'stlaringizga yuborishingiz mumkin.",
+                          "E'lon nusxalandi! Do'stlaringizga yuboring.",
                           style: TextStyle(color: Colors.white)),
                       backgroundColor: Colors.blueAccent,
-                      duration: Duration(seconds: 4),
+                      duration: Duration(seconds: 3),
                     ),
                   );
                 },
@@ -215,7 +315,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Seller & Action Buttons
+                  // Seller Card & Actions
                   GlassContainer(
                     radius: 16,
                     padding: const EdgeInsets.all(20),
@@ -242,7 +342,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                                 ],
                               ),
                             ),
-                            // Phone call button
+                            // Phone call
                             IconButton(
                               onPressed: _callSeller,
                               icon: const Icon(Icons.call,
@@ -252,7 +352,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                                       AppColors.primary.withOpacity(0.1)),
                               tooltip: 'Qo\'ng\'iroq qilish',
                             ),
-                            // Telegram button
+                            // Telegram
                             if (widget.bird.allowTelegram) ...[
                               const SizedBox(width: 8),
                               IconButton(
@@ -268,6 +368,7 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 20),
+                        // Escrow button
                         SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -276,14 +377,25 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
                             style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryDark),
                             child: _isProcessing
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white)
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 2.5),
+                                  )
                                 : const Text('Xavfsiz To\'lov (Escrow)',
                                     style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold)),
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Pul admin tomonidan muzlatiladi. Tovarni qo'lingizga olgach, pul sotuvchiga o'tkaziladi.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: AppColors.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),

@@ -271,12 +271,38 @@ async def create_bird_with_media(
     description: str = Form(None),
     region_id: int = Form(...),
     user_id: str = Form(...),
+    phone: str = Form(None),
     files: List[UploadFile] = File(...),
     document_url: str = Form(None),
     db: Session = Depends(get_db)
 ):
+    # Auto-create user if not exists (for Telegram Mini App users)
+    actual_user_id = user_id
+    existing_user = db.query(models.User).filter_by(id=user_id).first()
+    
+    if not existing_user and phone:
+        # Try to find by phone
+        existing_user = db.query(models.User).filter_by(phone_number=phone).first()
+        if existing_user:
+            actual_user_id = existing_user.id
+    
+    if not existing_user:
+        # Create new user record
+        new_user = models.User(
+            phone_number=phone or f"+998{random.randint(900000000, 999999999)}",
+            full_name="Qush Uyi Foydalanuvchi",
+            region_id=region_id,
+            role="seller",
+            show_phone=True,
+            allow_telegram=True,
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        actual_user_id = new_user.id
+
     new_bird = models.Bird(
-        owner_id=user_id,
+        owner_id=actual_user_id,
         category_id=category_id,
         region_id=region_id,
         species=breed,
@@ -302,7 +328,6 @@ async def create_bird_with_media(
         media_type = "video" if is_video else "image"
 
         if is_video:
-            # Video siqishni fonga (Background) jo'natamiz
             compressed_path = os.path.join(UPLOAD_DIR, f"cd_{unique_name}")
             background_tasks.add_task(compress_video, path, compressed_path)
             final_path = compressed_path
@@ -322,7 +347,7 @@ async def create_bird_with_media(
     notification_msg = f"🦅 Yangi E'lon Kiritildi!\nID: {new_bird.id}\nTur: {breed}\nNarx: {price} UZS\nTasdiqlashni kutmoqda."
     background_tasks.add_task(send_telegram_notification, ADMIN_CHAT_ID, notification_msg)
 
-    return {"status": "success", "bird_id": new_bird.id}
+    return {"status": "success", "bird_id": new_bird.id, "user_id": actual_user_id}
 
 @app.get("/birds")
 async def get_birds(
@@ -351,6 +376,30 @@ async def get_birds(
         region_name = db.query(models.Region).filter_by(id=bird.region_id).first()
         owner = db.query(models.User).filter_by(id=bird.owner_id).first()
         
+        # Build seller contact info
+        seller_phone = None
+        seller_telegram = None
+        seller_name = "Foydalanuvchi"
+        allow_tg = False
+        
+        if owner:
+            seller_name = owner.full_name or "Foydalanuvchi"
+            allow_tg = owner.allow_telegram if owner.allow_telegram is not None else True
+            
+            # Phone: show if user allows
+            if owner.show_phone and owner.phone_number:
+                seller_phone = owner.phone_number
+            
+            # Telegram: use username, telegram_id, or phone for t.me link
+            if allow_tg:
+                if owner.username:
+                    seller_telegram = owner.username
+                elif owner.telegram_id:
+                    seller_telegram = str(owner.telegram_id)
+                elif owner.phone_number:
+                    # Fallback: use phone number for t.me/+998... links
+                    seller_telegram = owner.phone_number
+        
         results.append({
             "id": bird.id,
             "category_id": bird.category_id,
@@ -359,10 +408,10 @@ async def get_birds(
             "price": bird.price,
             "status": bird.status,
             "region_name": region_name.name_uz if region_name else "Noma'lum",
-            "seller_name": owner.full_name if owner else "Foydalanuvchi",
-            "seller_phone": owner.phone_number if owner and owner.show_phone else None,
-            "seller_telegram": owner.telegram_id if owner and owner.allow_telegram else None,
-            "allow_telegram": owner.allow_telegram if owner else False,
+            "seller_name": seller_name,
+            "seller_phone": seller_phone,
+            "seller_telegram": seller_telegram,
+            "allow_telegram": allow_tg,
             "media": media_urls
         })
         
@@ -380,10 +429,27 @@ async def process_payment(background_tasks: BackgroundTasks, request: schemas.Tr
     
     bird = db.query(models.Bird).filter_by(id=request.bird_id).first()
     if not bird: raise HTTPException(404, "Bird not found")
-    if bird.status != "active": raise HTTPException(400, "Bird is not available")
+    if bird.status != "active": raise HTTPException(400, "Bu qush allaqachon band qilingan!")
+
+    # Auto-create buyer if not exists
+    actual_buyer_id = request.buyer_id
+    buyer = db.query(models.User).filter_by(id=request.buyer_id).first()
+    if not buyer:
+        # Create a new buyer user
+        buyer = models.User(
+            phone_number=f"+998{random.randint(900000000, 999999999)}",
+            full_name="Xaridor",
+            role="user",
+            show_phone=True,
+            allow_telegram=True,
+        )
+        db.add(buyer)
+        db.commit()
+        db.refresh(buyer)
+        actual_buyer_id = buyer.id
 
     transaction = models.Transaction(
-        user_id=request.buyer_id,
+        user_id=actual_buyer_id,
         bird_id=request.bird_id,
         amount=request.amount,
         payment_method=request.payment_method,
@@ -394,20 +460,20 @@ async def process_payment(background_tasks: BackgroundTasks, request: schemas.Tr
     # Update bird status to held
     bird.status = "held"
     
-    # Create Order record (Advanced Logistics Module Logic)
+    # Create Order record
     order = models.Order(
         bird_id=bird.id,
-        buyer_id=request.buyer_id,
+        buyer_id=actual_buyer_id,
         seller_id=bird.owner_id,
         total_amount=request.amount,
-        escrow_status="payment_held" # Pull muzlatildi status
+        escrow_status="payment_held"
     )
     db.add(order)
     
     db.commit()
     db.refresh(transaction)
     
-    msg = f"💰 ESCROW (Narx Muzlatildi):\nBuyurtma ID: {order.id}\nSumma: {request.amount} UZS\nXaridor ID: {request.buyer_id}"
+    msg = f"💰 ESCROW (Narx Muzlatildi):\nBuyurtma ID: {order.id}\nSumma: {request.amount} UZS\nXaridor ID: {actual_buyer_id}"
     background_tasks.add_task(send_telegram_notification, ADMIN_CHAT_ID, msg)
     
     print(f"💰 ESCROW: Bird HELD, Order {order.id} CREATED, Money Muzlatildi (Tx: {transaction.id}).")

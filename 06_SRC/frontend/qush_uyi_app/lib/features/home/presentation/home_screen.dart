@@ -65,9 +65,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         loading: () => _buildSkeleton(),
         error: (err, stack) => Center(
-          child: Text('Xatolik: $err\nURL: $baseUrl',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Xatolik: $err',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () =>
+                    ref.read(birdsNotifierProvider.notifier).fetchInitial(),
+                child: const Text('Qayta yuklash'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -107,11 +118,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ' ');
 
         return _PremiumBirdCard(
-          title: bird.species ?? "Noma'lum qush",
-          price: formattedPrice,
-          location: bird.regionName,
-          isVerified: bird.status == 'active',
-          mediaList: bird.media,
+          bird: bird,
+          formattedPrice: formattedPrice,
         );
       },
     );
@@ -133,19 +141,19 @@ class _BirdCardSkeleton extends StatelessWidget {
             Container(
               height: 200,
               width: double.infinity,
-              color: Colors.grey[800], // Skeleton standard image block
+              color: Colors.grey[800],
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Sayroqi Qush Skelet Nomi',
+                children: const [
+                  Text('Sayroqi Qush Skelet Nomi',
                       style: TextStyle(fontSize: 18)),
-                  const SizedBox(height: 8),
-                  const Text('1 000 000 UZS'),
-                  const SizedBox(height: 16),
-                  const Row(
+                  SizedBox(height: 8),
+                  Text('1 000 000 UZS'),
+                  SizedBox(height: 16),
+                  Row(
                     children: [
                       Icon(Icons.location_on, size: 16),
                       Text(' Samarqand viloyati'),
@@ -162,39 +170,23 @@ class _BirdCardSkeleton extends StatelessWidget {
 }
 
 class _PremiumBirdCard extends StatelessWidget {
-  final String title;
-  final String price;
-  final String location;
-  final bool isVerified;
-  final List<MediaModel> mediaList;
+  final BirdModel bird;
+  final String formattedPrice;
 
   const _PremiumBirdCard({
-    required this.title,
-    required this.price,
-    required this.location,
-    required this.isVerified,
-    required this.mediaList,
+    required this.bird,
+    required this.formattedPrice,
   });
 
   @override
   Widget build(BuildContext context) {
     String imageUrl = '';
-    if (mediaList.isNotEmpty) {
-      imageUrl = '$baseUrl${mediaList.first.url}';
+    if (bird.media.isNotEmpty) {
+      imageUrl = '$baseUrl${bird.media.first.url}';
     }
 
     return GestureDetector(
       onTap: () {
-        final bird = BirdModel(
-            id: 'temp_will_bind_from_param',
-            categoryId: 1,
-            price:
-                double.tryParse(price.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0,
-            status: isVerified ? 'active' : 'inactive',
-            regionName: location,
-            sellerName: 'Sotuvchi',
-            species: title,
-            media: mediaList);
         context.push('/home/detail', extra: bird);
       },
       child: Container(
@@ -220,7 +212,7 @@ class _PremiumBirdCard extends StatelessWidget {
                     height: 220,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: AppColors.surface, // Placeholder for image
+                      color: AppColors.surface,
                       borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20)),
@@ -238,7 +230,7 @@ class _PremiumBirdCard extends StatelessWidget {
                           )
                         : const SizedBox(),
                   ),
-                  if (isVerified)
+                  if (bird.status == 'active')
                     Positioned(
                       top: 12,
                       right: 12,
@@ -280,7 +272,7 @@ class _PremiumBirdCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            title,
+                            bird.species ?? "Noma'lum qush",
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
@@ -289,7 +281,7 @@ class _PremiumBirdCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            price,
+                            formattedPrice,
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -304,7 +296,7 @@ class _PremiumBirdCard extends StatelessWidget {
                                   size: 14, color: AppColors.textSecondary),
                               const SizedBox(width: 4),
                               Text(
-                                location,
+                                bird.regionName,
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelMedium
@@ -315,9 +307,11 @@ class _PremiumBirdCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Premium Button
+                    // Cart button → opens detail page
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        context.push('/home/detail', extra: bird);
+                      },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 12),

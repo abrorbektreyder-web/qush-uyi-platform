@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/network/api_client.dart';
@@ -176,13 +177,22 @@ class _AddScreenState extends ConsumerState<AddScreen> {
         );
       }
 
+      // Get real user_id from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      String userId = prefs.getString('user_id') ?? '';
+      if (userId.isEmpty) {
+        userId = 'seller_${DateTime.now().millisecondsSinceEpoch}';
+        await prefs.setString('user_id', userId);
+      }
+
       final formData = FormData.fromMap({
         'category_id': _selectedCategoryId,
         'breed': _breedController.text.trim(),
         'price': double.tryParse(_priceController.text.trim()) ?? 0,
         'description': _descriptionController.text.trim(),
         'region_id': _selectedRegionId,
-        'user_id': 'telegram_user', // MVP: mock user ID
+        'user_id': userId,
+        'phone': prefs.getString('user_phone') ?? '',
         'files': multipartFiles,
       });
 
@@ -196,6 +206,11 @@ class _AddScreenState extends ConsumerState<AddScreen> {
 
       if (response.statusCode == 200 && response.data['status'] == 'success') {
         if (mounted) {
+          // Save the real user_id from backend
+          if (response.data['user_id'] != null) {
+            await prefs.setString('user_id', response.data['user_id']);
+          }
+
           // Refresh the birds list
           ref.read(birdsNotifierProvider.notifier).fetchInitial();
 
