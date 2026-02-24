@@ -3,13 +3,13 @@
   --bg-dark: #0B0D17;
   --bg-surface: #151828;
   --bg-glass: rgba(255, 255, 255, 0.05);
-  
+
   --primary: #00FF87;
   --primary-dark: #00C969;
-  
+
   --text-main: #FFFFFF;
   --text-muted: #8B93A6;
-  
+
   --border-glass: rgba(255, 255, 255, 0.1);
   --danger: #FF4949;
   --warning: #FFB020;
@@ -30,7 +30,11 @@ body {
 }
 
 /* Typography */
-h1, h2, h3, h4, p {
+h1,
+h2,
+h3,
+h4,
+p {
   margin: 0;
 }
 
@@ -74,6 +78,7 @@ h1 {
   background-color: var(--primary);
   color: var(--bg-dark);
 }
+
 .btn-primary:hover {
   background-color: var(--primary-dark);
   transform: translateY(-1px);
@@ -84,6 +89,7 @@ h1 {
   color: var(--primary);
   border: 1px solid var(--primary);
 }
+
 .btn-outline:hover {
   background-color: rgba(0, 255, 135, 0.1);
 }
@@ -93,14 +99,25 @@ h1 {
   color: var(--danger);
   border: 1px solid var(--danger);
 }
+
 .btn-danger:hover {
   background-color: rgba(255, 73, 73, 0.1);
 }
 
-/* Layout */
+/* ===== LAYOUT ===== */
 .app-layout {
   display: flex;
   min-height: 100vh;
+}
+
+/* Mobile Top Bar — hidden on desktop */
+.mobile-topbar {
+  display: none;
+}
+
+/* Sidebar wrapper — desktop: static */
+.sidebar-wrapper {
+  flex-shrink: 0;
 }
 
 .sidebar {
@@ -110,6 +127,9 @@ h1 {
   display: flex;
   flex-direction: column;
   padding: 24px 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
 }
 
 .main-content {
@@ -117,6 +137,7 @@ h1 {
   padding: 32px 48px;
   overflow-y: auto;
   height: 100vh;
+  min-width: 0;
 }
 
 /* Table */
@@ -125,11 +146,14 @@ h1 {
   border-collapse: collapse;
   margin-top: 16px;
 }
-.data-table th, .data-table td {
+
+.data-table th,
+.data-table td {
   padding: 16px;
   text-align: left;
   border-bottom: 1px solid var(--border-glass);
 }
+
 .data-table th {
   color: var(--text-muted);
   font-weight: 500;
@@ -137,11 +161,13 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+
 .data-table td {
   font-size: 0.95rem;
 }
+
 .data-table tbody tr:hover {
-  background-color: rgba(255,255,255,0.02);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 /* Status Badge */
@@ -152,6 +178,150 @@ h1 {
   font-weight: 600;
   display: inline-block;
 }
-.status-badge.success { background: rgba(0, 255, 135, 0.1); color: var(--primary); }
-.status-badge.warning { background: rgba(255, 176, 32, 0.1); color: var(--warning); }
-.status-badge.pending { background: rgba(255, 255, 255, 0.1); color: #FFF; }
+
+.status-badge.success {
+  background: rgba(0, 255, 135, 0.1);
+  color: var(--primary);
+}
+
+.status-badge.warning {
+  background: rgba(255, 176, 32, 0.1);
+  color: var(--warning);
+}
+
+.status-badge.pending {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFF;
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+  display: none;
+}
+
+/* ============================================
+   RESPONSIVE — MOBILE (max-width: 768px)
+   ============================================ */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.3rem;
+  }
+
+  /* Show mobile topbar */
+  .mobile-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-glass);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .mobile-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Layout becomes column */
+  .app-layout {
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* Sidebar — off-canvas drawer */
+  .sidebar-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-wrapper.open {
+    transform: translateX(0);
+  }
+
+  .sidebar {
+    width: 100%;
+    height: 100vh;
+    border-right: 1px solid var(--border-glass);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Overlay */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 999;
+    animation: fadeIn 0.2s ease;
+  }
+
+  /* Main content adjustments */
+  .main-content {
+    padding: 20px 16px;
+    height: auto;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Glass panel */
+  .glass-panel {
+    padding: 16px;
+  }
+
+  .glass-panel:hover {
+    transform: none;
+  }
+
+  /* Tables scroll horizontally */
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 12px 10px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+}
+
+/* ============================================
+   RESPONSIVE — TABLET (max-width: 1024px)
+   ============================================ */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .sidebar {
+    width: 220px;
+  }
+
+  .main-content {
+    padding: 24px 28px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './pages/Dashboard';
 import { VerificationCenter } from './pages/VerificationCenter';
@@ -12,6 +13,13 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('admin_auth') === 'true';
   });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_auth');
@@ -24,10 +32,32 @@ function App() {
 
   return (
     <div className="app-layout">
-      {/* Sidebar Navigation */}
-      <Sidebar onLogout={handleLogout} />
+      {/* Mobile Top Bar */}
+      <div className="mobile-topbar">
+        <div className="mobile-topbar-brand">
+          <span style={{ color: 'var(--primary)', fontWeight: 700 }}>QUSH</span>{' '}
+          <span style={{ fontWeight: 700 }}>UYI</span>
+        </div>
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle menu"
+        >
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
 
-      {/* Main Content Render Area */}
+      {/* Sidebar Overlay (mobile) */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <div className={`sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
+        <Sidebar onLogout={handleLogout} />
+      </div>
+
+      {/* Main Content */}
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Dashboard />} />

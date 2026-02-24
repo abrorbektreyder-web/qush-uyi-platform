@@ -21,7 +21,7 @@ export const Dashboard: React.FC = () => {
             </header>
 
             {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', marginBottom: '40px' }}>
                 <div className="glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                     <div style={{ background: 'rgba(0, 255, 135, 0.1)', padding: '16px', borderRadius: '50%', color: 'var(--primary)' }}>
                         <Wallet size={32} />

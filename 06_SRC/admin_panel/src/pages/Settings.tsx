@@ -22,9 +22,9 @@ export const Settings = () => {
                 <p style={{ color: 'var(--text-muted)' }}>Admin markazi va platforma ishlash sozlamalarini boshqaring.</p>
             </header>
 
-            <div style={{ display: 'flex', gap: '32px' }}>
+            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
                 {/* TaBlar */}
-                <div style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px', flex: '0 0 auto' }}>
                     <button
                         className={`btn ${activeTab === 'umumiy' ? 'btn-primary' : 'btn-outline'}`}
                         style={{ justifyContent: 'flex-start' }}

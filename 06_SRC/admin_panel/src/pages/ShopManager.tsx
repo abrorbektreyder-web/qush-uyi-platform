@@ -45,7 +45,7 @@ export const ShopManager = () => {
 
     return (
         <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', gap: '16px', flexWrap: 'wrap' }}>
                 <div>
                     <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <PackageSearch color="var(--primary)" /> Do'kon (Official Shop)

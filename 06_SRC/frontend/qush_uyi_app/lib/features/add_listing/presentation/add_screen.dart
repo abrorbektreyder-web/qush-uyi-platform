@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -12,6 +15,67 @@ class AddScreen extends StatefulWidget {
 
 class _AddScreenState extends State<AddScreen> {
   int _currentStep = 0;
+  final ImagePicker _picker = ImagePicker();
+  final List<_MediaItem> _mediaFiles = [];
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _mediaFiles.add(_MediaItem(
+            name: image.name,
+            bytes: bytes,
+            isVideo: false,
+          ));
+        });
+      }
+    } catch (e) {
+      _showError('Rasm tanlashda xatolik: $e');
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final XFile? video = await _picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(seconds: 15),
+      );
+      if (video != null) {
+        final bytes = await video.readAsBytes();
+        setState(() {
+          _mediaFiles.add(_MediaItem(
+            name: video.name,
+            bytes: bytes,
+            isVideo: true,
+          ));
+        });
+      }
+    } catch (e) {
+      _showError('Video tanlashda xatolik: $e');
+    }
+  }
+
+  void _removeMedia(int index) {
+    setState(() {
+      _mediaFiles.removeAt(index);
+    });
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,23 +150,113 @@ class _AddScreenState extends State<AddScreen> {
                 margin: const EdgeInsets.only(top: 16),
                 child: Column(
                   children: [
-                    const Icon(Icons.cloud_upload_outlined,
-                        size: 70, color: AppColors.primary),
-                    const SizedBox(height: 16),
-                    const Text("Rasm va 15 sekundgacha video yuklang",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 16)),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        foregroundColor: AppColors.primary,
+                    // Show uploaded files
+                    if (_mediaFiles.isNotEmpty) ...[
+                      SizedBox(
+                        height: 120,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _mediaFiles.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (ctx, i) {
+                            final item = _mediaFiles[i];
+                            return Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: item.isVideo
+                                      ? Container(
+                                          width: 120,
+                                          height: 120,
+                                          color: AppColors.surface,
+                                          child: const Center(
+                                            child: Icon(Icons.videocam,
+                                                size: 40,
+                                                color: AppColors.primary),
+                                          ),
+                                        )
+                                      : Image.memory(
+                                          item.bytes,
+                                          width: 120,
+                                          height: 120,
+                                          fit: BoxFit.cover,
+                                        ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () => _removeMedia(i),
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      padding: const EdgeInsets.all(4),
+                                      child: const Icon(Icons.close,
+                                          color: Colors.white, size: 16),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
-                      onPressed: () {},
-                      icon: const Icon(Icons.add_photo_alternate),
-                      label: const Text('Galereyadan tanlash'),
-                    )
+                      const SizedBox(height: 16),
+                      Text(
+                        '${_mediaFiles.length} ta fayl tanlandi',
+                        style: const TextStyle(
+                            color: AppColors.primary, fontSize: 14),
+                      ),
+                      const SizedBox(height: 16),
+                    ] else ...[
+                      const Icon(Icons.cloud_upload_outlined,
+                          size: 70, color: AppColors.primary),
+                      const SizedBox(height: 16),
+                      const Text("Rasm va 15 sekundgacha video yuklang",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: AppColors.textSecondary, fontSize: 16)),
+                      const SizedBox(height: 24),
+                    ],
+                    // Action buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.surface,
+                              foregroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 14, horizontal: 12),
+                            ),
+                            onPressed: _pickImage,
+                            icon:
+                                const Icon(Icons.add_photo_alternate, size: 20),
+                            label: const Text('Rasm',
+                                style: TextStyle(fontSize: 13)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.surface,
+                              foregroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 14, horizontal: 12),
+                            ),
+                            onPressed: _pickVideo,
+                            icon: const Icon(Icons.videocam_outlined, size: 20),
+                            label: const Text('Video',
+                                style: TextStyle(fontSize: 13)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
@@ -181,4 +335,17 @@ class _AddScreenState extends State<AddScreen> {
       ),
     );
   }
+}
+
+/// Helper class to store picked media bytes + metadata
+class _MediaItem {
+  final String name;
+  final Uint8List bytes;
+  final bool isVideo;
+
+  _MediaItem({
+    required this.name,
+    required this.bytes,
+    required this.isVideo,
+  });
 }
