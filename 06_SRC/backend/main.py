@@ -272,25 +272,47 @@ async def create_bird_with_media(
     region_id: int = Form(...),
     user_id: str = Form(...),
     phone: str = Form(None),
+    seller_name: str = Form(None),
+    telegram_username: str = Form(None),
     files: List[UploadFile] = File(...),
     document_url: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    # Auto-create user if not exists (for Telegram Mini App users)
+    # Clean phone number
+    clean_phone = phone.strip() if phone else None
+    if clean_phone and not clean_phone.startswith('+'):
+        clean_phone = f"+998{clean_phone}"
+    
+    # Auto-create user if not exists
     actual_user_id = user_id
     existing_user = db.query(models.User).filter_by(id=user_id).first()
     
-    if not existing_user and phone:
+    if not existing_user and clean_phone:
         # Try to find by phone
-        existing_user = db.query(models.User).filter_by(phone_number=phone).first()
+        existing_user = db.query(models.User).filter_by(phone_number=clean_phone).first()
         if existing_user:
             actual_user_id = existing_user.id
     
-    if not existing_user:
-        # Create new user record
+    if existing_user:
+        # Update existing user's info if provided
+        if seller_name and seller_name.strip():
+            existing_user.full_name = seller_name.strip()
+        if clean_phone:
+            existing_user.phone_number = clean_phone
+        if telegram_username and telegram_username.strip():
+            clean_tg = telegram_username.strip().lstrip('@')
+            existing_user.username = clean_tg
+        existing_user.region_id = region_id
+        existing_user.show_phone = True
+        existing_user.allow_telegram = True
+        db.commit()
+    else:
+        # Create new user record with real data
+        clean_tg = telegram_username.strip().lstrip('@') if telegram_username else None
         new_user = models.User(
-            phone_number=phone or f"+998{random.randint(900000000, 999999999)}",
-            full_name="Qush Uyi Foydalanuvchi",
+            phone_number=clean_phone or f"+998{random.randint(900000000, 999999999)}",
+            full_name=seller_name.strip() if seller_name else "Sotuvchi",
+            username=clean_tg,
             region_id=region_id,
             role="seller",
             show_phone=True,

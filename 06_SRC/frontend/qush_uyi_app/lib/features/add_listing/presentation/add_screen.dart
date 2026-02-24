@@ -27,6 +27,9 @@ class _AddScreenState extends ConsumerState<AddScreen> {
   final _breedController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _telegramController = TextEditingController();
 
   // Selected category & region
   int _selectedCategoryId = 1;
@@ -61,10 +64,28 @@ class _AddScreenState extends ConsumerState<AddScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _phoneController.text = prefs.getString('user_phone') ?? '';
+      _nameController.text = prefs.getString('user_name') ?? '';
+      _telegramController.text = prefs.getString('user_telegram') ?? '';
+    });
+  }
+
+  @override
   void dispose() {
     _breedController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
+    _phoneController.dispose();
+    _nameController.dispose();
+    _telegramController.dispose();
     super.dispose();
   }
 
@@ -158,6 +179,15 @@ class _AddScreenState extends ConsumerState<AddScreen> {
       _showError('Iltimos narxni kiriting');
       return;
     }
+    if (_phoneController.text.trim().isEmpty ||
+        _phoneController.text.trim().length < 9) {
+      _showError('Iltimos telefon raqamingizni kiriting');
+      return;
+    }
+    if (_nameController.text.trim().isEmpty) {
+      _showError('Iltimos ismingizni kiriting');
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
@@ -185,14 +215,31 @@ class _AddScreenState extends ConsumerState<AddScreen> {
         await prefs.setString('user_id', userId);
       }
 
+      // Save seller info locally
+      final phone = _phoneController.text.trim();
+      final name = _nameController.text.trim();
+      final telegram = _telegramController.text.trim();
+      await prefs.setString('user_phone', phone);
+      await prefs.setString('user_name', name);
+      if (telegram.isNotEmpty) {
+        await prefs.setString('user_telegram', telegram);
+      }
+
+      // Parse price as string to preserve the value
+      final priceStr =
+          _priceController.text.trim().replaceAll(RegExp(r'[^0-9.]'), '');
+      final price = double.tryParse(priceStr) ?? 0;
+
       final formData = FormData.fromMap({
         'category_id': _selectedCategoryId,
         'breed': _breedController.text.trim(),
-        'price': double.tryParse(_priceController.text.trim()) ?? 0,
+        'price': price,
         'description': _descriptionController.text.trim(),
         'region_id': _selectedRegionId,
         'user_id': userId,
-        'phone': prefs.getString('user_phone') ?? '',
+        'phone': phone,
+        'seller_name': name,
+        'telegram_username': telegram,
         'files': multipartFiles,
       });
 
@@ -221,12 +268,13 @@ class _AddScreenState extends ConsumerState<AddScreen> {
             ),
           );
 
-          // Clear form
+          // Clear form (keep phone & name)
           setState(() {
             _mediaFiles.clear();
             _breedController.clear();
             _priceController.clear();
             _descriptionController.clear();
+            _documentFile = null;
             _currentStep = 0;
           });
         }
@@ -500,6 +548,48 @@ class _AddScreenState extends ConsumerState<AddScreen> {
                         onChanged: (v) =>
                             setState(() => _selectedRegionId = v!),
                       ),
+                      const SizedBox(height: 24),
+                      // ─── SOTUVCHI MA'LUMOTLARI ───
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3)),
+                          color: AppColors.primary.withOpacity(0.05),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: const [
+                                Icon(Icons.person_pin,
+                                    color: AppColors.primary, size: 20),
+                                SizedBox(width: 8),
+                                Text('Sotuvchi ma\'lumotlari',
+                                    style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                                'Xaridorlar siz bilan bog\'lanishi uchun kerak',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12)),
+                            const SizedBox(height: 16),
+                            _buildTextField('Ismingiz *',
+                                controller: _nameController),
+                            const SizedBox(height: 12),
+                            _buildPhoneField(),
+                            const SizedBox(height: 12),
+                            _buildTextField('Telegram username (ixtiyoriy)',
+                                controller: _telegramController, prefix: '@'),
+                          ],
+                        ),
+                      ),
                     ],
                   ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
                 ),
@@ -632,7 +722,8 @@ class _AddScreenState extends ConsumerState<AddScreen> {
   Widget _buildTextField(String label,
       {bool isNumber = false,
       int maxLines = 1,
-      TextEditingController? controller}) {
+      TextEditingController? controller,
+      String? prefix}) {
     return TextFormField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
@@ -641,6 +732,34 @@ class _AddScreenState extends ConsumerState<AddScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixText: prefix != null ? '$prefix ' : null,
+        prefixStyle: const TextStyle(color: AppColors.primary, fontSize: 16),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.glassBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: AppColors.surface,
+      ),
+    );
+  }
+
+  Widget _buildPhoneField() {
+    return TextFormField(
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: 'Telefon raqamingiz *',
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixText: '+998 ',
+        prefixStyle: const TextStyle(color: AppColors.primary, fontSize: 16),
+        hintText: '90 123 45 67',
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.glassBorder),
