@@ -8,6 +8,7 @@ import { ShopManager } from './pages/ShopManager';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Analytics } from './pages/Analytics';
+import './App.css';
 import './modal.css';
 
 function App() {
