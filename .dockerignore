@@ -1,0 +1,17 @@
+06_SRC/frontend/
+06_SRC/admin_panel/
+06_SRC/backend/venv/
+06_SRC/backend/__pycache__/
+06_SRC/backend/uploads/
+01_STRATEGY/
+02_SPECS/
+03_DESIGN/
+04_RESEARCH/
+05_BRANDING/
+07_DEPLOY/
+08_DOCS/
+.git/
+.gitignore
+*.md
+.agents/
+node_modules/
