@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../data/bird_model.dart';
 import '../../payment/presentation/providers/payment_provider.dart';
+import 'home_screen.dart';
 
 class BirdDetailScreen extends ConsumerStatefulWidget {
   final BirdModel bird;
@@ -245,6 +246,38 @@ class _BirdDetailScreenState extends ConsumerState<BirdDetailScreen> {
             backgroundColor: AppColors.background,
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
+              // ─── FAVORITE HEART ───
+              Consumer(
+                builder: (context, ref, _) {
+                  final favIds = ref.watch(favoriteBirdIdsProvider);
+                  final isFav = favIds.contains(widget.bird.id);
+                  return IconButton(
+                    icon: Icon(
+                      isFav ? Icons.favorite : Icons.favorite_border,
+                      color: isFav ? Colors.redAccent : Colors.white,
+                    ),
+                    onPressed: () {
+                      ref
+                          .read(favoriteBirdIdsProvider.notifier)
+                          .toggle(widget.bird.id);
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isFav
+                                ? "Saqlanganlardan olib tashlandi"
+                                : "❤️ Saqlanganlarga qo'shildi!",
+                          ),
+                          backgroundColor:
+                              isFav ? Colors.grey.shade700 : AppColors.primary,
+                          duration: const Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.share, color: Colors.white),
                 onPressed: () {

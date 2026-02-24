@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../home/presentation/providers/home_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -20,6 +22,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _userPhone = '';
   String _userTelegram = '';
   int _listingsCount = 0;
+  int _favoritesCount = 0;
   Uint8List? _avatarBytes;
 
   @override
@@ -31,11 +34,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
+
+    // Load avatar from base64
+    Uint8List? avatar;
+    final avatarBase64 = prefs.getString('user_avatar_base64');
+    if (avatarBase64 != null && avatarBase64.isNotEmpty) {
+      try {
+        avatar = base64Decode(avatarBase64);
+      } catch (_) {}
+    }
+
+    // Load favorites count
+    final favIds = prefs.getStringList('favorite_bird_ids') ?? [];
+
     setState(() {
       _userName = prefs.getString('user_name') ?? 'Foydalanuvchi';
       _userPhone = prefs.getString('user_phone') ?? '';
       _userTelegram = prefs.getString('user_telegram') ?? '';
       _listingsCount = prefs.getInt('listing_count') ?? 0;
+      _favoritesCount = favIds.length;
+      _avatarBytes = avatar;
     });
   }
 
@@ -49,16 +67,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (result != null &&
           result.files.isNotEmpty &&
           result.files.first.bytes != null) {
+        final bytes = result.files.first.bytes!;
+
+        // Save to SharedPreferences as base64
+        final prefs = await SharedPreferences.getInstance();
+        final base64Str = base64Encode(bytes);
+        await prefs.setString('user_avatar_base64', base64Str);
+
         setState(() {
-          _avatarBytes = result.files.first.bytes;
+          _avatarBytes = bytes;
         });
-        // Save to SharedPreferences as base64 would be needed for persistence
-        // For now, it stays in memory during the session
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("✅ Rasm yangilandi!"),
+              content: Text("✅ Profil rasmi saqlandi!"),
               backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -67,9 +92,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Rasm tanlashda xatolik: $e'),
-            backgroundColor: Colors.red.shade700,
-          ),
+              content: Text('Rasm tanlashda xatolik: $e'),
+              backgroundColor: Colors.red.shade700),
         );
       }
     }
@@ -90,8 +114,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
         content: const Text(
-            'Haqiqatan ham tizimdan chiqmoqchimisiz?\nBarcha saqlangan ma\'lumotlar o\'chiriladi.',
-            style: TextStyle(color: Colors.white70, height: 1.5)),
+          'Haqiqatan ham tizimdan chiqmoqchimisiz?\nBarcha saqlangan ma\'lumotlar o\'chiriladi.',
+          style: TextStyle(color: Colors.white70, height: 1.5),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -103,9 +128,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Navigator.pop(ctx);
               final prefs = await SharedPreferences.getInstance();
               await prefs.clear();
-              if (mounted) {
-                context.go('/splash');
-              }
+              if (mounted) context.go('/splash');
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Chiqish', style: TextStyle(color: Colors.white)),
@@ -116,57 +139,100 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _showSavedItems() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
+    final stateAsync = ref.read(birdsNotifierProvider);
+
+    stateAsync.whenData((state) {
+      final prefs = SharedPreferences.getInstance();
+      prefs.then((p) {
+        final favIds = p.getStringList('favorite_bird_ids') ?? [];
+        final favBirds =
+            state.birds.where((b) => favIds.contains(b.id)).toList();
+
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: AppColors.surface,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (ctx) => DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.3,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (_, scrollCtrl) => Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2)),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "❤️ Saqlanganlar (${favBirds.length})",
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                if (favBirds.isEmpty)
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.favorite_border,
+                              size: 60, color: AppColors.textSecondary),
+                          const SizedBox(height: 16),
+                          const Text("Saqlanganlar bo'sh",
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
+                          const SizedBox(height: 8),
+                          const Text("E'lonlardagi ❤️ tugmasini bosib saqlang",
+                              style: TextStyle(color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollCtrl,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: favBirds.length,
+                      itemBuilder: (_, i) {
+                        final bird = favBirds[i];
+                        return ListTile(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            context.push('/home/detail', extra: bird);
+                          },
+                          leading: const CircleAvatar(
+                            backgroundColor: AppColors.surface,
+                            child: Icon(Icons.pets, color: AppColors.primary),
+                          ),
+                          title: Text(bird.species ?? "Noma'lum",
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600)),
+                          subtitle: Text('${bird.price.toInt()} UZS',
+                              style: const TextStyle(color: AppColors.primary)),
+                          trailing: const Icon(Icons.chevron_right,
+                              color: Colors.white30),
+                        );
+                      },
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 24),
-            const Icon(Icons.favorite_border,
-                size: 60, color: AppColors.textSecondary),
-            const SizedBox(height: 16),
-            const Text(
-              "Saqlanganlar ro'yxati bo'sh",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Yoqqan e'lonlarni ❤️ tugmasi bilan saqlang va ularni bu yerda ko'ring.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  context.go('/home');
-                },
-                child: const Text("E'lonlarni ko'rish"),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+      });
+    });
   }
 
   void _showVerificationCenter() {
@@ -189,20 +255,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 24),
             const Icon(Icons.verified_user, size: 60, color: AppColors.primary),
             const SizedBox(height: 16),
-            const Text(
-              'Verifikatsiya Markazi',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
+            const Text('Verifikatsiya Markazi',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             GlassContainer(
               padding: const EdgeInsets.all(16),
@@ -224,7 +287,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              "Verifikatsiyadan o'tish orqali e'lonlaringiz yuqori o'rinlarda ko'rsatiladi va xaridorlar ishonchi oshadi.",
+              "Verifikatsiyadan o'tish orqali e'lonlaringiz yuqori o'rinlarda ko'rsatiladi.",
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
@@ -257,11 +320,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
           ),
-          Icon(
-            isVerified ? Icons.check_circle : Icons.arrow_forward_ios,
-            color: isVerified ? AppColors.primary : Colors.white24,
-            size: 20,
-          ),
+          Icon(isVerified ? Icons.check_circle : Icons.arrow_forward_ios,
+              color: isVerified ? AppColors.primary : Colors.white24, size: 20),
         ],
       ),
     );
@@ -272,7 +332,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     String clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
     if (!clean.startsWith('+')) clean = '+998$clean';
     if (clean.length >= 12) {
-      // Format: +998 90 123 45 67
       return '${clean.substring(0, 4)} ${clean.substring(4, 6)} ${clean.substring(6, 9)} ${clean.substring(9, 11)} ${clean.substring(11)}';
     }
     return clean;
@@ -289,10 +348,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white70),
-            onPressed: _loadUserData,
-            tooltip: 'Yangilash',
-          ),
+              icon: const Icon(Icons.refresh, color: Colors.white70),
+              onPressed: _loadUserData,
+              tooltip: 'Yangilash'),
         ],
       ),
       body: RefreshIndicator(
@@ -303,7 +361,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // ─── AVATAR WITH CAMERA BUTTON ───
+              // ─── AVATAR ───
               Center(
                 child: Stack(
                   children: [
@@ -319,8 +377,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               AppColors.primary.withOpacity(0.3),
                               AppColors.primaryDark.withOpacity(0.1)
                             ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
                           ),
                           border: Border.all(
                               color: AppColors.primary.withOpacity(0.5),
@@ -328,13 +384,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         child: _avatarBytes != null
                             ? ClipOval(
-                                child: Image.memory(
-                                  _avatarBytes!,
-                                  width: 110,
-                                  height: 110,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
+                                child: Image.memory(_avatarBytes!,
+                                    width: 110, height: 110, fit: BoxFit.cover))
                             : const Icon(Icons.person,
                                 size: 55, color: AppColors.textSecondary),
                       ),
@@ -362,18 +413,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ).animate().scale(delay: 100.ms, duration: 400.ms),
               const SizedBox(height: 16),
-
-              // ─── USER NAME ───
               Center(
-                child: Text(_userName,
-                    style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
-              ).animate().fadeIn(delay: 200.ms),
+                      child: Text(_userName,
+                          style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)))
+                  .animate()
+                  .fadeIn(delay: 200.ms),
               const SizedBox(height: 6),
-
-              // ─── PHONE NUMBER ───
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -384,21 +432,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ? AppColors.primary
                             : AppColors.textSecondary),
                     const SizedBox(width: 6),
-                    Text(
-                      _formatPhoneDisplay(_userPhone),
-                      style: TextStyle(
-                        color: _userPhone.isNotEmpty
-                            ? Colors.white
-                            : AppColors.textSecondary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text(_formatPhoneDisplay(_userPhone),
+                        style: TextStyle(
+                            color: _userPhone.isNotEmpty
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500)),
                   ],
                 ),
               ).animate().fadeIn(delay: 300.ms),
-
-              // ─── TELEGRAM ───
               if (_userTelegram.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Center(
@@ -408,19 +451,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const Icon(Icons.telegram,
                           size: 16, color: Colors.blueAccent),
                       const SizedBox(width: 6),
-                      Text(
-                        '@${_userTelegram.replaceAll('@', '')}',
-                        style: const TextStyle(
-                            color: Colors.blueAccent, fontSize: 14),
-                      ),
+                      Text('@${_userTelegram.replaceAll('@', '')}',
+                          style: const TextStyle(
+                              color: Colors.blueAccent, fontSize: 14)),
                     ],
                   ),
                 ).animate().fadeIn(delay: 350.ms),
               ],
-
               const SizedBox(height: 24),
-
-              // ─── STATS ───
               Row(
                 children: [
                   Expanded(
@@ -432,16 +470,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Icons.account_balance_wallet, Colors.amber)),
                 ],
               ).animate().slideY(begin: 0.2, duration: 400.ms).fadeIn(),
-
               const SizedBox(height: 24),
-
-              // ─── MENU ───
               GlassContainer(
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    _buildListTile(Icons.favorite_border, "Saqlanganlar",
-                        onTap: _showSavedItems, badge: '0'),
+                    _buildListTile(Icons.favorite, "Saqlanganlar",
+                        onTap: _showSavedItems, badge: '$_favoritesCount'),
                     _buildDivider(),
                     _buildListTile(Icons.shopping_bag_outlined,
                         "Mening xaridlarim (Escrow)",
@@ -457,7 +492,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     _buildListTile(Icons.settings_outlined, "Sozlamalar",
                         onTap: () async {
                       await context.push('/profile/settings');
-                      // Reload data when returning from settings
                       _loadUserData();
                     }),
                     _buildDivider(),
@@ -469,17 +503,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   .animate()
                   .slideY(begin: 0.2, delay: 200.ms, duration: 400.ms)
                   .fadeIn(),
-
               const SizedBox(height: 16),
-
-              // ─── APP VERSION ───
               Center(
-                child: Text(
-                  'Qush Uyi v1.0.0 • Premium',
-                  style: TextStyle(
-                      color: Colors.white.withOpacity(0.2), fontSize: 12),
-                ),
-              ),
+                  child: Text('Qush Uyi v1.0.0 • Premium',
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.2), fontSize: 12))),
               const SizedBox(height: 24),
             ],
           ),
@@ -497,9 +525,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
+                color: accentColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: accentColor, size: 28),
           ),
           const SizedBox(height: 12),
@@ -536,12 +563,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                        color: AppColors.primary.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10)),
                     child: Text(badge,
                         style: const TextStyle(
-                            color: AppColors.primary, fontSize: 12)),
+                            color: AppColors.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold)),
                   ),
                 const SizedBox(width: 8),
                 const Icon(Icons.chevron_right, color: Colors.white30),

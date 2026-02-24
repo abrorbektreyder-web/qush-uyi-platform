@@ -2,11 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../data/bird_model.dart';
 import 'providers/home_provider.dart';
 import '../../../core/network/api_client.dart';
+
+/// Provider for favorite bird IDs
+final favoriteBirdIdsProvider =
+    StateNotifierProvider<FavoriteBirdIdsNotifier, Set<String>>((ref) {
+  return FavoriteBirdIdsNotifier();
+});
+
+class FavoriteBirdIdsNotifier extends StateNotifier<Set<String>> {
+  FavoriteBirdIdsNotifier() : super({}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList('favorite_bird_ids') ?? [];
+    state = ids.toSet();
+  }
+
+  Future<void> toggle(String birdId) async {
+    final newSet = Set<String>.from(state);
+    if (newSet.contains(birdId)) {
+      newSet.remove(birdId);
+    } else {
+      newSet.add(birdId);
+    }
+    state = newSet;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favorite_bird_ids', newSet.toList());
+  }
+
+  bool isFav(String birdId) => state.contains(birdId);
+}
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -139,10 +173,7 @@ class _BirdCardSkeleton extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              height: 200,
-              width: double.infinity,
-              color: Colors.grey[800],
-            ),
+                height: 200, width: double.infinity, color: Colors.grey[800]),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -153,12 +184,10 @@ class _BirdCardSkeleton extends StatelessWidget {
                   SizedBox(height: 8),
                   Text('1 000 000 UZS'),
                   SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, size: 16),
-                      Text(' Samarqand viloyati'),
-                    ],
-                  ),
+                  Row(children: [
+                    Icon(Icons.location_on, size: 16),
+                    Text(' Samarqand viloyati')
+                  ]),
                 ],
               ),
             ),
@@ -169,7 +198,7 @@ class _BirdCardSkeleton extends StatelessWidget {
   }
 }
 
-class _PremiumBirdCard extends StatelessWidget {
+class _PremiumBirdCard extends ConsumerWidget {
   final BirdModel bird;
   final String formattedPrice;
 
@@ -179,11 +208,14 @@ class _PremiumBirdCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     String imageUrl = '';
     if (bird.media.isNotEmpty) {
       imageUrl = '$baseUrl${bird.media.first.url}';
     }
+
+    final favIds = ref.watch(favoriteBirdIdsProvider);
+    final isFav = favIds.contains(bird.id);
 
     return GestureDetector(
       onTap: () {
@@ -205,7 +237,7 @@ class _PremiumBirdCard extends StatelessWidget {
           radius: 20,
           child: Column(
             children: [
-              // Image Section with verification badge
+              // Image Section with verification badge + favorite
               Stack(
                 children: [
                   Container(
@@ -230,6 +262,48 @@ class _PremiumBirdCard extends StatelessWidget {
                           )
                         : const SizedBox(),
                   ),
+                  // ─── FAVORITE HEART BUTTON ───
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: GestureDetector(
+                      onTap: () {
+                        ref
+                            .read(favoriteBirdIdsProvider.notifier)
+                            .toggle(bird.id);
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isFav
+                                  ? "❤️ Saqlanganlardan olib tashlandi"
+                                  : "❤️ Saqlanganlarga qo'shildi!",
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: isFav
+                                ? Colors.grey.shade700
+                                : AppColors.primary,
+                            duration: const Duration(seconds: 1),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          color: isFav ? Colors.redAccent : Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // ─── VERIFIED BADGE ───
                   if (bird.status == 'active')
                     Positioned(
                       top: 12,
