@@ -1,8 +1,7 @@
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -15,23 +14,28 @@ class AddScreen extends StatefulWidget {
 
 class _AddScreenState extends State<AddScreen> {
   int _currentStep = 0;
-  final ImagePicker _picker = ImagePicker();
   final List<_MediaItem> _mediaFiles = [];
 
-  Future<void> _pickImage() async {
+  /// Pick images from gallery using file_picker (works on Web + Native)
+  Future<void> _pickImages() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+        withData: true, // Load bytes directly — no blob URL issues on Web
       );
-      if (image != null) {
-        final bytes = await image.readAsBytes();
+
+      if (result != null && result.files.isNotEmpty) {
         setState(() {
-          _mediaFiles.add(_MediaItem(
-            name: image.name,
-            bytes: bytes,
-            isVideo: false,
-          ));
+          for (final file in result.files) {
+            if (file.bytes != null) {
+              _mediaFiles.add(_MediaItem(
+                name: file.name,
+                bytes: file.bytes!,
+                isVideo: false,
+              ));
+            }
+          }
         });
       }
     } catch (e) {
@@ -39,21 +43,26 @@ class _AddScreenState extends State<AddScreen> {
     }
   }
 
+  /// Pick video from gallery using file_picker (works on Web + Native)
   Future<void> _pickVideo() async {
     try {
-      final XFile? video = await _picker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(seconds: 15),
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: false,
+        withData: true, // Load bytes directly — no blob URL issues on Web
       );
-      if (video != null) {
-        final bytes = await video.readAsBytes();
-        setState(() {
-          _mediaFiles.add(_MediaItem(
-            name: video.name,
-            bytes: bytes,
-            isVideo: true,
-          ));
-        });
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        if (file.bytes != null) {
+          setState(() {
+            _mediaFiles.add(_MediaItem(
+              name: file.name,
+              bytes: file.bytes!,
+              isVideo: true,
+            ));
+          });
+        }
       }
     } catch (e) {
       _showError('Video tanlashda xatolik: $e');
@@ -150,7 +159,7 @@ class _AddScreenState extends State<AddScreen> {
                 margin: const EdgeInsets.only(top: 16),
                 child: Column(
                   children: [
-                    // Show uploaded files
+                    // Show uploaded file previews
                     if (_mediaFiles.isNotEmpty) ...[
                       SizedBox(
                         height: 120,
@@ -169,11 +178,29 @@ class _AddScreenState extends State<AddScreen> {
                                       ? Container(
                                           width: 120,
                                           height: 120,
-                                          color: AppColors.surface,
-                                          child: const Center(
-                                            child: Icon(Icons.videocam,
-                                                size: 40,
-                                                color: AppColors.primary),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.surface,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.videocam,
+                                                  size: 36,
+                                                  color: AppColors.primary),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                item.name.length > 10
+                                                    ? '${item.name.substring(0, 10)}...'
+                                                    : item.name,
+                                                style: const TextStyle(
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                    fontSize: 10),
+                                              ),
+                                            ],
                                           ),
                                         )
                                       : Image.memory(
@@ -204,7 +231,7 @@ class _AddScreenState extends State<AddScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         '${_mediaFiles.length} ta fayl tanlandi',
                         style: const TextStyle(
@@ -221,7 +248,8 @@ class _AddScreenState extends State<AddScreen> {
                               color: AppColors.textSecondary, fontSize: 16)),
                       const SizedBox(height: 24),
                     ],
-                    // Action buttons
+
+                    // Action buttons — Rasm + Video
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -233,7 +261,7 @@ class _AddScreenState extends State<AddScreen> {
                               padding: const EdgeInsets.symmetric(
                                   vertical: 14, horizontal: 12),
                             ),
-                            onPressed: _pickImage,
+                            onPressed: _pickImages,
                             icon:
                                 const Icon(Icons.add_photo_alternate, size: 20),
                             label: const Text('Rasm',
